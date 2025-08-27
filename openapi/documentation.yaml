@@ -1,0 +1,133 @@
+openapi: 3.0.0
+info:
+  title: Verification System API
+  description: API for third-party verification system
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Development server
+paths:
+  /:
+    get:
+      summary: Login page
+      description: Returns the login page
+      responses:
+        '200':
+          description: Login page HTML
+  /login:
+    post:
+      summary: User login
+      description: Authenticate user with credentials
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '400':
+          description: Invalid credentials
+  /dashboard:
+    get:
+      summary: Dashboard page
+      description: Returns the dashboard page
+      responses:
+        '200':
+          description: Dashboard page HTML
+  /third-party-login:
+    get:
+      summary: Third party login page
+      description: Returns the third party login page
+      responses:
+        '200':
+          description: Third party login page HTML
+    post:
+      summary: Third party authentication
+      description: Authenticate with third party service
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                thirdPartyUsername:
+                  type: string
+                thirdPartyPassword:
+                  type: string
+      responses:
+        '200':
+          description: Third party login successful
+        '400':
+          description: Invalid credentials
+  /verification-form:
+    get:
+      summary: Verification form page
+      description: Returns the verification form page
+      responses:
+        '200':
+          description: Verification form page HTML
+  /verify:
+    post:
+      summary: Submit verification
+      description: Submit verification request
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                thirdPartyUsername:
+                  type: string
+                nid10Digit:
+                  type: string
+                nid17Digit:
+                  type: string
+                nameEn:
+                  type: string
+                name:
+                  type: string
+                dateOfBirth:
+                  type: string
+                father:
+                  type: string
+                mother:
+                  type: string
+                spouse:
+                  type: string
+                permanentDivision:
+                  type: string
+                permanentDistrict:
+                  type: string
+                permanentUpazila:
+                  type: string
+                presentDivision:
+                  type: string
+                presentDistrict:
+                  type: string
+                presentUpazila:
+                  type: string
+      responses:
+        '200':
+          description: Verification result
+        '400':
+          description: Invalid request
+  /logout:
+    get:
+      summary: Logout
+      description: Logout user
+      responses:
+        '200':
+          description: Logout successful

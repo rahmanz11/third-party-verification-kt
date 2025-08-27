@@ -1,0 +1,13 @@
+{
+    "recommendations": [
+        "mathiasfrohlich.Kotlin",
+        "fwcd.kotlin",
+        "dcortes92.freemarker",
+        "redhat.java",
+        "vscjava.vscode-gradle",
+        "ms-vscode.vscode-json",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next"
+    ]
+}

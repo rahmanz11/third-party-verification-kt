@@ -1,0 +1,19 @@
+{
+    "kotlin": {
+        "format": {
+            "enabled": true,
+            "indentSize": 4,
+            "continuationIndentSize": 4,
+            "maxLineLength": 120
+        },
+        "lint": {
+            "enabled": true,
+            "unusedImports": "warning",
+            "unusedVariables": "warning"
+        },
+        "completion": {
+            "autoImport": true,
+            "snippets": true
+        }
+    }
+}

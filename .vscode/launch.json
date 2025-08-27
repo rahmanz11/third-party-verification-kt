@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "kotlin",
+            "request": "launch",
+            "name": "Kotlin Application",
+            "projectRoot": "${workspaceFolder}",
+            "mainClass": "com.external.verification.ApplicationKt",
+            "preLaunchTask": "build"
+        },
+        {
+            "type": "java",
+            "name": "Debug Kotlin Application",
+            "request": "launch",
+            "mainClass": "com.external.verification.ApplicationKt",
+            "projectName": "verification-kotlin-fullstack"
+        }
+    ]
+}

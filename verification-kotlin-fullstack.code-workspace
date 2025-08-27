@@ -1,0 +1,55 @@
+{
+    "folders": [
+        {
+            "name": "Verification Kotlin Fullstack",
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "*.kt": "kotlin",
+            "*.ftl": "freemarker",
+            "*.gradle.kts": "kotlin",
+            "*.kts": "kotlin"
+        },
+        "kotlin.languageServer.enabled": true,
+        "kotlin.completion.snippets.enabled": true,
+        "kotlin.debugAdapter.enabled": true,
+        "freemarker.autoComplete": true,
+        "freemarker.syntaxHighlighting": true,
+        "editor.quickSuggestions": {
+            "other": true,
+            "comments": false,
+            "strings": true
+        },
+        "editor.suggest.snippetsPreventQuickSuggestions": false,
+        "editor.tabCompletion": "on",
+        "editor.wordBasedSuggestions": "off",
+        "editor.parameterHints.enabled": true,
+        "editor.hover.enabled": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+        "files.exclude": {
+            "**/build": true,
+            "**/.gradle": true,
+            "**/out": true,
+            "**/bin": true
+        },
+        "search.exclude": {
+            "**/build": true,
+            "**/.gradle": true,
+            "**/out": true,
+            "**/bin": true
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            "mathiasfrohlich.Kotlin",
+            "fwcd.kotlin",
+            "dcortes92.freemarker",
+            "redhat.java",
+            "vscjava.vscode-gradle"
+        ]
+    }
+}

@@ -1,0 +1,70 @@
+================================================================================
+THIRD PARTY API REQUEST
+================================================================================
+Timestamp: 2025-08-28 02:03:24.929
+API: LOGIN
+URL: https://prportal.nidw.gov.bd/partner-service/rest/auth/login/login
+Request Body:
+LoginRequest(username=jjjjj, password=jhjhj)
+
+================================================================================
+THIRD PARTY API ERROR
+================================================================================
+Timestamp: 2025-08-28 02:03:25.141
+API: LOGIN
+Duration: 214ms
+Error: NoTransformationFoundException
+Message: Expected response body of the type 'class com.external.verification.models.LoginResponse' but was 'class io.ktor.utils.io.SourceByteReadChannel'
+In response from `https://prportal.nidw.gov.bd/partner-service/rest/auth/login/login`
+Response status `503 Service Unavailable`
+Response header `ContentType: text/html` 
+Request header `Accept: application/json`
+
+You can read how to resolve NoTransformationFoundException at FAQ: 
+https://ktor.io/docs/faq.html#no-transformation-found-exception
+Stack Trace:
+  io.ktor.client.call.HttpClientCall.bodyNullable(HttpClientCall.kt:104)
+  com.external.verification.services.ThirdPartyApiServiceImpl.login(ThirdPartyApiServiceImpl.kt:284)
+  com.external.verification.services.ThirdPartyApiServiceImpl$login$1.invokeSuspend(ThirdPartyApiServiceImpl.kt)
+  kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+  kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+  kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+  kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:829)
+  kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+  kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+
+================================================================================
+THIRD PARTY API REQUEST
+================================================================================
+Timestamp: 2025-08-27 20:18:23.208
+API: LOGIN
+URL: https://prportal.nidw.gov.bd/partner-service/rest/auth/login/login
+Request Body:
+LoginRequest(username=agasdf, password=asdfasdf)
+
+================================================================================
+THIRD PARTY API ERROR
+================================================================================
+Timestamp: 2025-08-27 20:18:23.513
+API: LOGIN
+Duration: 309ms
+Error: NoTransformationFoundException
+Message: Expected response body of the type 'class com.external.verification.models.LoginResponse' but was 'class io.ktor.utils.io.SourceByteReadChannel'
+In response from `https://prportal.nidw.gov.bd/partner-service/rest/auth/login/login`
+Response status `503 Service Unavailable`
+Response header `ContentType: text/html` 
+Request header `Accept: application/json`
+
+You can read how to resolve NoTransformationFoundException at FAQ: 
+https://ktor.io/docs/faq.html#no-transformation-found-exception
+Stack Trace:
+  io.ktor.client.call.HttpClientCall.bodyNullable(HttpClientCall.kt:104)
+  com.external.verification.services.ThirdPartyApiServiceImpl.login(ThirdPartyApiServiceImpl.kt:284)
+  com.external.verification.services.ThirdPartyApiServiceImpl$login$1.invokeSuspend(ThirdPartyApiServiceImpl.kt)
+  kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+  kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+  kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+  kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:829)
+  kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+  kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+

@@ -1,0 +1,248 @@
+package com.external.verification.services
+
+import com.external.verification.models.*
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import mu.KotlinLogging
+
+class ThirdPartyApiServiceImpl(
+    private val authUrl: String,
+    private val verificationUrl: String,
+    private val billingUrl: String
+) : ThirdPartyApiService {
+    
+    private val logger = KotlinLogging.logger {}
+    private val apiLogger = ThirdPartyApiLogger()
+    private val jsonPrinter = Json { 
+        prettyPrint = true 
+        isLenient = true 
+        ignoreUnknownKeys = true 
+    }
+    
+    private val client = HttpClient {
+        install(ContentNegotiation) {
+            json(Json {
+                prettyPrint = true
+                isLenient = true
+                ignoreUnknownKeys = true
+            })
+        }
+    }
+    
+    override suspend fun login(loginRequest: LoginRequest): LoginResponse {
+        val startTime = System.currentTimeMillis()
+        
+        logger.info { "=== THIRD PARTY API: LOGIN REQUEST ===" }
+        logger.info { "URL: $authUrl/login" }
+        logger.info { "Request Body:\n$loginRequest" }
+        
+        apiLogger.logRequest("LOGIN", "$authUrl/login", loginRequest)
+        
+        try {
+            val response: LoginResponse = client.post("$authUrl/login") {
+                contentType(ContentType.Application.Json)
+                setBody(loginRequest)
+            }.body()
+            
+            val duration = System.currentTimeMillis() - startTime
+            
+            logger.info { "=== THIRD PARTY API: LOGIN RESPONSE ===" }
+            logger.info { "Response Body:\n$response" }
+            
+            apiLogger.logResponse("LOGIN", response, duration)
+            
+            return response
+        } catch (e: Exception) {
+            val duration = System.currentTimeMillis() - startTime
+            apiLogger.logError("LOGIN", e, duration)
+            
+            when {
+                e.message?.contains("503") == true || e.message?.contains("Service Unavailable") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("500") == true || e.message?.contains("Internal Server Error") == true -> 
+                    throw Exception("500 Internal Server Error")
+                e.message?.contains("401") == true || e.message?.contains("Unauthorized") == true -> 
+                    throw Exception("401 Unauthorized")
+                e.message?.contains("400") == true || e.message?.contains("Bad Request") == true -> 
+                    throw Exception("400 Bad Request")
+                e.message?.contains("NoTransformationFoundException") == true || 
+                e.message?.contains("ContentType") == true || 
+                e.message?.contains("text/html") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("Connection") == true || 
+                e.message?.contains("timeout") == true || 
+                e.message?.contains("ConnectException") == true -> 
+                    throw Exception("503 Service Unavailable")
+                else -> throw Exception("503 Service Unavailable")
+            }
+        }
+    }
+    
+    override suspend fun verifyPerson(
+        verificationRequest: VerificationRequest, 
+        accessToken: String
+    ): VerificationResponse {
+        val startTime = System.currentTimeMillis()
+        
+        logger.info { "=== THIRD PARTY API: VERIFY PERSON REQUEST ===" }
+        logger.info { "URL: $verificationUrl" }
+        logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
+        logger.info { "Request Body:\n$verificationRequest" }
+        
+        apiLogger.logRequest("VERIFY_PERSON", verificationUrl, verificationRequest, accessToken)
+        
+        try {
+            val response: VerificationResponse = client.post(verificationUrl) {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $accessToken")
+                setBody(verificationRequest)
+            }.body()
+            
+            val duration = System.currentTimeMillis() - startTime
+            
+            logger.info { "=== THIRD PARTY API: VERIFY PERSON RESPONSE ===" }
+            logger.info { "Response Body:\n$response" }
+            
+            apiLogger.logResponse("VERIFY_PERSON", response, duration)
+            
+            return response
+        } catch (e: Exception) {
+            val duration = System.currentTimeMillis() - startTime
+            apiLogger.logError("VERIFY_PERSON", e, duration)
+            
+            when {
+                e.message?.contains("503") == true || e.message?.contains("Service Unavailable") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("500") == true || e.message?.contains("Internal Server Error") == true -> 
+                    throw Exception("500 Internal Server Error")
+                e.message?.contains("401") == true || e.message?.contains("Unauthorized") == true -> 
+                    throw Exception("401 Unauthorized")
+                e.message?.contains("400") == true || e.message?.contains("Bad Request") == true -> 
+                    throw Exception("400 Bad Request")
+                e.message?.contains("NoTransformationFoundException") == true || 
+                e.message?.contains("ContentType") == true || 
+                e.message?.contains("text/html") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("Connection") == true || 
+                e.message?.contains("timeout") == true || 
+                e.message?.contains("ConnectException") == true -> 
+                    throw Exception("503 Service Unavailable")
+                else -> throw Exception("503 Service Unavailable")
+            }
+        }
+    }
+    
+    override suspend fun changePassword(
+        changePasswordRequest: ChangePasswordRequest, 
+        accessToken: String
+    ): String {
+        val startTime = System.currentTimeMillis()
+        
+        logger.info { "=== THIRD PARTY API: CHANGE PASSWORD REQUEST ===" }
+        logger.info { "URL: $authUrl/change-user-password" }
+        logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
+        logger.info { "Request Body:\n$changePasswordRequest" }
+        
+        apiLogger.logRequest("CHANGE_PASSWORD", "$authUrl/change-user-password", changePasswordRequest, accessToken)
+        
+        try {
+            val response: String = client.post("$authUrl/change-user-password") {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $accessToken")
+                setBody(changePasswordRequest)
+            }.body()
+            
+            val duration = System.currentTimeMillis() - startTime
+            
+            logger.info { "=== THIRD PARTY API: CHANGE PASSWORD RESPONSE ===" }
+            logger.info { "Response Body:\n$response" }
+            
+            apiLogger.logResponse("CHANGE_PASSWORD", response, duration)
+            
+            return response
+        } catch (e: Exception) {
+            val duration = System.currentTimeMillis() - startTime
+            apiLogger.logError("CHANGE_PASSWORD", e, duration)
+            
+            when {
+                e.message?.contains("503") == true || e.message?.contains("Service Unavailable") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("500") == true || e.message?.contains("Internal Server Error") == true -> 
+                    throw Exception("500 Internal Server Error")
+                e.message?.contains("401") == true || e.message?.contains("Unauthorized") == true -> 
+                    throw Exception("401 Unauthorized")
+                e.message?.contains("400") == true || e.message?.contains("Bad Request") == true -> 
+                    throw Exception("400 Bad Request")
+                e.message?.contains("NoTransformationFoundException") == true || 
+                e.message?.contains("ContentType") == true || 
+                e.message?.contains("text/html") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("Connection") == true || 
+                e.message?.contains("timeout") == true || 
+                e.message?.contains("ConnectException") == true -> 
+                    throw Exception("503 Service Unavailable")
+                else -> throw Exception("503 Service Unavailable")
+            }
+        }
+    }
+    
+    override suspend fun getBillingReport(
+        billingRequest: BillingRequest, 
+        accessToken: String
+    ): BillingResponse {
+        val startTime = System.currentTimeMillis()
+        
+        logger.info { "=== THIRD PARTY API: GET BILLING REPORT REQUEST ===" }
+        logger.info { "URL: $billingUrl/get-billing-report" }
+        logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
+        logger.info { "Request Body:\n$billingRequest" }
+        
+        apiLogger.logRequest("GET_BILLING_REPORT", "$billingUrl/get-billing-report", billingRequest, accessToken)
+        
+        try {
+            val response: BillingResponse = client.post("$billingUrl/get-billing-report") {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $accessToken")
+                setBody(billingRequest)
+            }.body()
+            
+            val duration = System.currentTimeMillis() - startTime
+            
+            logger.info { "=== THIRD PARTY API: GET BILLING REPORT RESPONSE ===" }
+            logger.info { "Response Body:\n$response" }
+            
+            apiLogger.logResponse("GET_BILLING_REPORT", response, duration)
+            
+            return response
+        } catch (e: Exception) {
+            val duration = System.currentTimeMillis() - startTime
+            apiLogger.logError("GET_BILLING_REPORT", e, duration)
+            
+            when {
+                e.message?.contains("503") == true || e.message?.contains("Service Unavailable") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("500") == true || e.message?.contains("Internal Server Error") == true -> 
+                    throw Exception("500 Internal Server Error")
+                e.message?.contains("401") == true || e.message?.contains("Unauthorized") == true -> 
+                    throw Exception("401 Unauthorized")
+                e.message?.contains("400") == true || e.message?.contains("Bad Request") == true -> 
+                    throw Exception("400 Bad Request")
+                e.message?.contains("NoTransformationFoundException") == true || 
+                e.message?.contains("ContentType") == true || 
+                e.message?.contains("text/html") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("Connection") == true || 
+                e.message?.contains("timeout") == true || 
+                e.message?.contains("ConnectException") == true -> 
+                    throw Exception("503 Service Unavailable")
+                else -> throw Exception("503 Service Unavailable")
+            }
+        }
+    }
+}

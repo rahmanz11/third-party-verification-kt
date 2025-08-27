@@ -1,0 +1,56 @@
+# Build stage
+FROM gradle:8.5-jdk21 AS build
+
+# Set the working directory
+WORKDIR /app
+
+# Copy gradle files first for better caching
+COPY build.gradle.kts settings.gradle.kts ./
+COPY gradle gradle
+COPY gradlew gradlew.bat ./
+
+# Make gradlew executable
+RUN chmod +x gradlew
+
+# Download dependencies
+RUN ./gradlew dependencies --no-daemon
+
+# Copy source code
+COPY src src
+
+# Build the application
+RUN ./gradlew buildFatJar --no-daemon
+
+# Runtime stage
+FROM openjdk:21-slim
+
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
+WORKDIR /app
+
+# Create a non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Copy the built application from build stage
+COPY --from=build /app/build/libs/verification-fullstack.jar app.jar
+
+# Copy OpenAPI documentation for Swagger
+COPY openapi openapi
+
+# Change ownership to appuser
+RUN chown -R appuser:appuser /app
+
+# Switch to appuser
+USER appuser
+
+# Expose the port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Run the application
+CMD ["java", "-jar", "app.jar"]
