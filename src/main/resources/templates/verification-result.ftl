@@ -31,15 +31,15 @@
                 <div class="col-lg-10">
                     <div class="result-card p-4">
                         <div class="text-center mb-4">
-                            <#if verificationResponse.verified == true>
+                            <#if verificationResponse.verified?? && verificationResponse.verified == true>
                                 <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
                                 <h2 class="fw-bold text-success">Verification Successful!</h2>
-                            <#elseif verificationResponse.verified == false>
+                            <#elseif verificationResponse.verified?? && verificationResponse.verified == false>
                                 <i class="fas fa-times-circle fa-3x text-danger mb-3"></i>
                                 <h2 class="fw-bold text-danger">Verification Failed</h2>
                             <#else>
                                 <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                                <h2 class="fw-bold text-warning">Partial Verification</h2>
+                                <h2 class="fw-bold text-warning">Verification Status Unknown</h2>
                             </#if>
                             <p class="text-muted">Verification result for the submitted person information</p>
                         </div>
@@ -54,22 +54,33 @@
                                     <p class="mb-0"><strong>Status Code:</strong> ${verificationResponse.statusCode!''}</p>
                                 </div>
                                 <div class="col-md-6 text-end">
-                                    <#if verificationResponse.verified == true>
+                                    <#if verificationResponse.verified?? && verificationResponse.verified == true>
                                         <span class="status-badge bg-success text-white">
                                             <i class="fas fa-check me-2"></i>Verified
                                         </span>
-                                    <#elseif verificationResponse.verified == false>
+                                    <#elseif verificationResponse.verified?? && verificationResponse.verified == false>
                                         <span class="status-badge bg-danger text-white">
                                             <i class="fas fa-times me-2"></i>Not Verified
                                         </span>
                                     <#else>
                                         <span class="status-badge bg-warning text-dark">
-                                            <i class="fas fa-exclamation-triangle me-2"></i>Partial Match
+                                            <i class="fas fa-exclamation-triangle me-2"></i>Status Unknown
                                         </span>
                                     </#if>
                                 </div>
                             </div>
                         </div>
+
+                        <#if verificationResponse.message?? && verificationResponse.message != "">
+                            <div class="result-section">
+                                <h5 class="fw-bold mb-3">
+                                    <i class="fas fa-exclamation-triangle me-2 text-warning"></i>Message
+                                </h5>
+                                <div class="alert alert-info">
+                                    <p class="mb-0">${verificationResponse.message}</p>
+                                </div>
+                            </div>
+                        </#if>
 
                         <#if verificationResponse.success??>
                             <div class="result-section">
