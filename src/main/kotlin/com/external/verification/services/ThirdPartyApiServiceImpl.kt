@@ -39,13 +39,13 @@ class ThirdPartyApiServiceImpl(
         val startTime = System.currentTimeMillis()
         
         logger.info { "=== THIRD PARTY API: LOGIN REQUEST ===" }
-        logger.info { "URL: $authUrl/login" }
+        logger.info { "URL: $authUrl" }
         logger.info { "Request Body:\n$loginRequest" }
         
-        apiLogger.logRequest("LOGIN", "$authUrl/login", loginRequest)
+        apiLogger.logRequest("LOGIN", "$authUrl", loginRequest)
         
         try {
-            val response: LoginResponse = client.post("$authUrl/login") {
+            val response: LoginResponse = client.post("$authUrl") {
                 contentType(ContentType.Application.Json)
                 setBody(loginRequest)
             }.body()
@@ -98,7 +98,7 @@ class ThirdPartyApiServiceImpl(
         apiLogger.logRequest("VERIFY_PERSON", verificationUrl, verificationRequest, accessToken)
         
         try {
-            val response: VerificationResponse = client.post(verificationUrl) {
+            val response: VerificationResponse = client.post("$verificationUrl") {
                 contentType(ContentType.Application.Json)
                 header("Authorization", "Bearer $accessToken")
                 setBody(verificationRequest)
@@ -145,14 +145,14 @@ class ThirdPartyApiServiceImpl(
         val startTime = System.currentTimeMillis()
         
         logger.info { "=== THIRD PARTY API: CHANGE PASSWORD REQUEST ===" }
-        logger.info { "URL: $authUrl/change-user-password" }
+        logger.info { "URL: $authUrl" }
         logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
         logger.info { "Request Body:\n$changePasswordRequest" }
         
-        apiLogger.logRequest("CHANGE_PASSWORD", "$authUrl/change-user-password", changePasswordRequest, accessToken)
+        apiLogger.logRequest("CHANGE_PASSWORD", "$authUrl", changePasswordRequest, accessToken)
         
         try {
-            val response: String = client.post("$authUrl/change-user-password") {
+            val response: String = client.post("$authUrl") {
                 contentType(ContentType.Application.Json)
                 header("Authorization", "Bearer $accessToken")
                 setBody(changePasswordRequest)
@@ -199,14 +199,14 @@ class ThirdPartyApiServiceImpl(
         val startTime = System.currentTimeMillis()
         
         logger.info { "=== THIRD PARTY API: GET BILLING REPORT REQUEST ===" }
-        logger.info { "URL: $billingUrl/get-billing-report" }
+        logger.info { "URL: $billingUrl" }
         logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
         logger.info { "Request Body:\n$billingRequest" }
         
-        apiLogger.logRequest("GET_BILLING_REPORT", "$billingUrl/get-billing-report", billingRequest, accessToken)
+        apiLogger.logRequest("GET_BILLING_REPORT", "$billingUrl", billingRequest, accessToken)
         
         try {
-            val response: BillingResponse = client.post("$billingUrl/get-billing-report") {
+            val response: BillingResponse = client.post("$billingUrl") {
                 contentType(ContentType.Application.Json)
                 header("Authorization", "Bearer $accessToken")
                 setBody(billingRequest)
