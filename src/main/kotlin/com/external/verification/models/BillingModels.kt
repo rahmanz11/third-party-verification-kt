@@ -11,7 +11,7 @@ data class BillingRequest(
 @Serializable
 data class BillingResponse(
     val status: String,
-    val statusCode: String,
+    val statusCode: String? = null,
     val success: SuccessData? = null
 ) {
     @Serializable

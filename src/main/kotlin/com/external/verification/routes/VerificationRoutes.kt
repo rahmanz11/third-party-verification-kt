@@ -20,15 +20,11 @@ fun Route.verificationRoutes(thirdPartyApiService: ThirdPartyApiService) {
                 try {
                     val verificationRequest = call.receive<VerificationRequest>()
                     
-                    if (verificationRequest.verify.nameEn.isBlank() || 
-                        verificationRequest.verify.name.isBlank() || 
-                        verificationRequest.verify.dateOfBirth.isBlank() || 
-                        verificationRequest.verify.father.isBlank() || 
-                        verificationRequest.verify.mother.isBlank()) {
+                    if (verificationRequest.verify.dateOfBirth.isBlank()) {
                         val errorResponse = VerificationResponse(
                             status = "BAD_REQUEST",
                             statusCode = "ERROR",
-                            message = "All mandatory fields are required"
+                            message = "Date of birth is required"
                         )
                         call.respond(HttpStatusCode.BadRequest, errorResponse)
                         return@post

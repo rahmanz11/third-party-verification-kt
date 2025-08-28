@@ -283,6 +283,7 @@ fun Route.webRoutes(
             call.respond(FreeMarkerContent("verification-form.ftl", mapOf(
                 "title" to "Person Verification - Verification System",
                 "username" to username,
+                "thirdPartyUsername" to thirdPartyUsername,
                 "error" to errorMessage
             )))
         }

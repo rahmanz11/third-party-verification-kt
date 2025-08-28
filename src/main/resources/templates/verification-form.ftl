@@ -46,7 +46,7 @@
 
                         <form id="verificationForm" method="POST" action="/verify">
                             <input type="hidden" name="username" value="${username}">
-                            <input type="hidden" name="thirdPartyUsername" value="${thirdPartyUsername}">
+                            <input type="hidden" name="thirdPartyUsername" value="${thirdPartyUsername!username}">
 
                             <div class="section-header">
                                 <h5 class="mb-0">
@@ -77,12 +77,12 @@
                             
                             <div class="row mb-4">
                                 <div class="col-md-6">
-                                    <label for="nameEn" class="form-label required-field">ইংরেজি নাম</label>
-                                    <input type="text" class="form-control" id="nameEn" name="nameEn" required>
+                                    <label for="nameEn" class="form-label">ইংরেজি নাম</label>
+                                    <input type="text" class="form-control" id="nameEn" name="nameEn">
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="name" class="form-label required-field">বাংলা নাম</label>
-                                    <input type="text" class="form-control" id="name" name="name" required>
+                                    <label for="name" class="form-label">বাংলা নাম</label>
+                                    <input type="text" class="form-control" id="name" name="name">
                                 </div>
                             </div>
 
@@ -99,12 +99,12 @@
 
                             <div class="row mb-4">
                                 <div class="col-md-6">
-                                    <label for="father" class="form-label required-field">পিতার নাম</label>
-                                    <input type="text" class="form-control" id="father" name="father" required>
+                                    <label for="father" class="form-label">পিতার নাম</label>
+                                    <input type="text" class="form-control" id="father" name="father">
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="mother" class="form-label required-field">মাতার নাম</label>
-                                    <input type="text" class="form-control" id="mother" name="mother" required>
+                                    <label for="mother" class="form-label">মাতার নাম</label>
+                                    <input type="text" class="form-control" id="mother" name="mother">
                                 </div>
                             </div>
 
@@ -116,20 +116,20 @@
                             
                             <div class="row mb-4">
                                 <div class="col-md-4">
-                                    <label for="permanentDivision" class="form-label required-field">বিভাগ</label>
-                                    <select class="form-select" id="permanentDivision" name="permanentDivision" required>
+                                    <label for="permanentDivision" class="form-label">বিভাগ</label>
+                                    <select class="form-select" id="permanentDivision" name="permanentDivision">
                                         <option value="">বিভাগ নির্বাচন করুন</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="permanentDistrict" class="form-label required-field">জেলা</label>
-                                    <select class="form-select" id="permanentDistrict" name="permanentDistrict" required disabled>
+                                    <label for="permanentDistrict" class="form-label">জেলা</label>
+                                    <select class="form-select" id="permanentDistrict" name="permanentDistrict" disabled>
                                         <option value="">জেলা নির্বাচন করুন</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="permanentUpazila" class="form-label required-field">উপজেলা</label>
-                                    <select class="form-select" id="permanentUpazila" name="permanentUpazila" required disabled>
+                                    <label for="permanentUpazila" class="form-label">উপজেলা</label>
+                                    <select class="form-select" id="permanentUpazila" name="permanentUpazila" disabled>
                                         <option value="">উপজেলা নির্বাচন করুন</option>
                                     </select>
                                 </div>
@@ -143,20 +143,20 @@
                             
                             <div class="row mb-4">
                                 <div class="col-md-4">
-                                    <label for="presentDivision" class="form-label required-field">বিভাগ</label>
-                                    <select class="form-select" id="presentDivision" name="presentDivision" required>
+                                    <label for="presentDivision" class="form-label">বিভাগ</label>
+                                    <select class="form-select" id="presentDivision" name="presentDivision">
                                         <option value="">বিভাগ নির্বাচন করুন</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="presentDistrict" class="form-label required-field">জেলা</label>
-                                    <select class="form-select" id="presentDistrict" name="presentDistrict" required disabled>
+                                    <label for="presentDistrict" class="form-label">জেলা</label>
+                                    <select class="form-select" id="presentDistrict" name="presentDistrict" disabled>
                                         <option value="">জেলা নির্বাচন করুন</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="presentUpazila" class="form-label required-field">উপজেলা</label>
-                                    <select class="form-select" id="presentUpazila" name="presentUpazila" required disabled>
+                                    <label for="presentUpazila" class="form-label">উপজেলা</label>
+                                    <select class="form-select" id="presentUpazila" name="presentUpazila" disabled>
                                         <option value="">উপজেলা নির্বাচন করুন</option>
                                     </select>
                                 </div>

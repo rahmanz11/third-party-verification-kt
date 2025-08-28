@@ -11,7 +11,7 @@ data class LoginRequest(
 @Serializable
 data class LoginResponse(
     val status: String,
-    val statusCode: String,
+    val statusCode: String? = null,
     val success: SuccessData? = null,
     val error: ErrorData? = null
 ) {
@@ -44,7 +44,7 @@ data class ChangePasswordRequest(
 @Serializable
 data class ApiResponse(
     val status: String,
-    val statusCode: String,
+    val statusCode: String? = null,
     val success: SuccessData? = null,
     val error: ErrorData? = null
 ) {

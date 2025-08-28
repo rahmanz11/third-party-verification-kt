@@ -36,7 +36,7 @@ data class VerificationRequest(
 @Serializable
 data class VerificationResponse(
     val status: String,
-    val statusCode: String,
+    val statusCode: String? = null,
     val success: SuccessData? = null,
     val verified: Boolean? = null,
     val fieldVerificationResult: FieldVerificationResult? = null,

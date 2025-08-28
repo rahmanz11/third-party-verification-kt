@@ -464,17 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const requiredFields = [
             { id: 'nidType', label: 'এনআইডি ধরন' },
             { id: 'nidValue', label: 'এনআইডি নম্বর' },
-            { id: 'nameEn', label: 'ইংরেজি নাম' },
-            { id: 'name', label: 'বাংলা নাম' },
-            { id: 'dateOfBirth', label: 'জন্ম তারিখ' },
-            { id: 'father', label: 'পিতার নাম' },
-            { id: 'mother', label: 'মাতার নাম' },
-            { id: 'permanentDivision', label: 'স্থায়ী ঠিকানার বিভাগ' },
-            { id: 'permanentDistrict', label: 'স্থায়ী ঠিকানার জেলা' },
-            { id: 'permanentUpazila', label: 'স্থায়ী ঠিকানার উপজেলা' },
-            { id: 'presentDivision', label: 'বর্তমান ঠিকানার বিভাগ' },
-            { id: 'presentDistrict', label: 'বর্তমান ঠিকানার জেলা' },
-            { id: 'presentUpazila', label: 'বর্তমান ঠিকানার উপজেলা' }
+            { id: 'dateOfBirth', label: 'জন্ম তারিখ' }
         ];
         
         for (const field of requiredFields) {

@@ -51,7 +51,7 @@
                             <div class="row align-items-center">
                                 <div class="col-md-6">
                                     <p class="mb-0"><strong>Status:</strong> ${verificationResponse.status}</p>
-                                    <p class="mb-0"><strong>Status Code:</strong> ${verificationResponse.statusCode}</p>
+                                    <p class="mb-0"><strong>Status Code:</strong> ${verificationResponse.statusCode!''}</p>
                                 </div>
                                 <div class="col-md-6 text-end">
                                     <#if verificationResponse.verified == true>
