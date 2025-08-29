@@ -14,7 +14,8 @@ import mu.KotlinLogging
 class ThirdPartyApiServiceImpl(
     private val authUrl: String,
     private val verificationUrl: String,
-    private val billingUrl: String
+    private val billingUrl: String,
+    private val afisVerificationUrl: String
 ) : ThirdPartyApiService {
     
     private val logger = KotlinLogging.logger {}
@@ -61,6 +62,57 @@ class ThirdPartyApiServiceImpl(
         } catch (e: Exception) {
             val duration = System.currentTimeMillis() - startTime
             apiLogger.logError("LOGIN", e, duration)
+            
+            when {
+                e.message?.contains("503") == true || e.message?.contains("Service Unavailable") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("500") == true || e.message?.contains("Internal Server Error") == true -> 
+                    throw Exception("500 Internal Server Error")
+                e.message?.contains("401") == true || e.message?.contains("Unauthorized") == true -> 
+                    throw Exception("401 Unauthorized")
+                e.message?.contains("400") == true || e.message?.contains("Bad Request") == true -> 
+                    throw Exception("400 Bad Request")
+                e.message?.contains("NoTransformationFoundException") == true || 
+                e.message?.contains("ContentType") == true || 
+                e.message?.contains("text/html") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("Connection") == true || 
+                e.message?.contains("timeout") == true || 
+                e.message?.contains("ConnectException") == true -> 
+                    throw Exception("503 Service Unavailable")
+                else -> throw Exception("503 Service Unavailable")
+            }
+        }
+    }
+    
+    override suspend fun logout(accessToken: String): LogoutResponse {
+        val startTime = System.currentTimeMillis()
+        
+        val logoutUrl = authUrl.replace("/login", "/logout")
+        
+        logger.info { "=== THIRD PARTY API: LOGOUT REQUEST ===" }
+        logger.info { "URL: $logoutUrl" }
+        logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
+        
+        apiLogger.logRequest("LOGOUT", logoutUrl, "{}", accessToken)
+        
+        try {
+            val response: LogoutResponse = client.post(logoutUrl) {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $accessToken")
+            }.body()
+            
+            val duration = System.currentTimeMillis() - startTime
+            
+            logger.info { "=== THIRD PARTY API: LOGOUT RESPONSE ===" }
+            logger.info { "Response Body:\n$response" }
+            
+            apiLogger.logResponse("LOGOUT", response, duration)
+            
+            return response
+        } catch (e: Exception) {
+            val duration = System.currentTimeMillis() - startTime
+            apiLogger.logError("LOGOUT", e, duration)
             
             when {
                 e.message?.contains("503") == true || e.message?.contains("Service Unavailable") == true -> 
@@ -237,6 +289,171 @@ class ThirdPartyApiServiceImpl(
                 e.message?.contains("ContentType") == true || 
                 e.message?.contains("text/html") == true -> 
                     throw Exception("503 Service Unavailable")
+                e.message?.contains("Connection") == true || 
+                e.message?.contains("timeout") == true || 
+                e.message?.contains("ConnectException") == true -> 
+                    throw Exception("503 Service Unavailable")
+                else -> throw Exception("503 Service Unavailable")
+            }
+        }
+    }
+    
+    override suspend fun afisVerification(
+        afisRequest: AfisVerificationRequest, 
+        accessToken: String
+    ): AfisVerificationResponse {
+        val startTime = System.currentTimeMillis()
+        
+        logger.info { "=== THIRD PARTY API: AFIS VERIFICATION REQUEST ===" }
+        logger.info { "URL: $afisVerificationUrl" }
+        logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
+        logger.info { "Request Body:\n$afisRequest" }
+        
+        apiLogger.logRequest("AFIS_VERIFICATION", afisVerificationUrl, afisRequest, accessToken)
+        
+        try {
+            val response: AfisVerificationResponse = client.post(afisVerificationUrl) {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $accessToken")
+                setBody(afisRequest)
+            }.body()
+            
+            val duration = System.currentTimeMillis() - startTime
+            
+            logger.info { "=== THIRD PARTY API: AFIS VERIFICATION RESPONSE ===" }
+            logger.info { "Response Body:\n$response" }
+            
+            apiLogger.logResponse("AFIS_VERIFICATION", response, duration)
+            
+            return response
+        } catch (e: Exception) {
+            val duration = System.currentTimeMillis() - startTime
+            apiLogger.logError("AFIS_VERIFICATION", e, duration)
+            
+            when {
+                e.message?.contains("503") == true || e.message?.contains("Service Unavailable") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("500") == true || e.message?.contains("Internal Server Error") == true -> 
+                    throw Exception("500 Internal Server Error")
+                e.message?.contains("401") == true || e.message?.contains("Unauthorized") == true -> 
+                    throw Exception("401 Unauthorized")
+                e.message?.contains("400") == true || e.message?.contains("Bad Request") == true -> 
+                    throw Exception("400 Bad Request")
+                e.message?.contains("403") == true || e.message?.contains("Forbidden") == true -> 
+                    throw Exception("403 Forbidden")
+                e.message?.contains("NoTransformationFoundException") == true || 
+                e.message?.contains("ContentType") == true || 
+                e.message?.contains("text/html") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("Connection") == true || 
+                e.message?.contains("timeout") == true || 
+                e.message?.contains("ConnectException") == true -> 
+                    throw Exception("503 Service Unavailable")
+                else -> throw Exception("503 Service Unavailable")
+            }
+        }
+    }
+    
+    override suspend fun uploadFingerprint(
+        fingerprintUrl: String, 
+        fingerprintData: ByteArray
+    ): FingerprintUploadResponse {
+        val startTime = System.currentTimeMillis()
+        
+        logger.info { "=== THIRD PARTY API: FINGERPRINT UPLOAD REQUEST ===" }
+        logger.info { "URL: $fingerprintUrl" }
+        logger.info { "Data Size: ${fingerprintData.size} bytes" }
+        
+        apiLogger.logRequest("FINGERPRINT_UPLOAD", fingerprintUrl, "Binary data", null)
+        
+        try {
+            val response = client.put(fingerprintUrl) {
+                contentType(ContentType.Application.OctetStream)
+                setBody(fingerprintData)
+            }
+            
+            val duration = System.currentTimeMillis() - startTime
+            
+            logger.info { "=== THIRD PARTY API: FINGERPRINT UPLOAD RESPONSE ===" }
+            logger.info { "Status: ${response.status}" }
+            
+            apiLogger.logResponse("FINGERPRINT_UPLOAD", "Status: ${response.status}", duration)
+            
+            return if (response.status.value in 200..299) {
+                FingerprintUploadResponse(
+                    success = true,
+                    message = "Fingerprint uploaded successfully",
+                    statusCode = response.status.value
+                )
+            } else {
+                FingerprintUploadResponse(
+                    success = false,
+                    message = "Fingerprint upload failed with status: ${response.status.value}",
+                    statusCode = response.status.value
+                )
+            }
+        } catch (e: Exception) {
+            val duration = System.currentTimeMillis() - startTime
+            apiLogger.logError("FINGERPRINT_UPLOAD", e, duration)
+            
+            when {
+                e.message?.contains("503") == true || e.message?.contains("Service Unavailable") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("500") == true || e.message?.contains("Internal Server Error") == true -> 
+                    throw Exception("500 Internal Server Error")
+                e.message?.contains("401") == true || e.message?.contains("Unauthorized") == true -> 
+                    throw Exception("401 Unauthorized")
+                e.message?.contains("400") == true || e.message?.contains("Bad Request") == true -> 
+                    throw Exception("400 Bad Request")
+                e.message?.contains("Connection") == true || 
+                e.message?.contains("timeout") == true || 
+                e.message?.contains("ConnectException") == true -> 
+                    throw Exception("503 Service Unavailable")
+                else -> throw Exception("503 Service Unavailable")
+            }
+        }
+    }
+    
+    override suspend fun checkAfisResult(
+        resultCheckUrl: String, 
+        accessToken: String
+    ): AfisResultResponse {
+        val startTime = System.currentTimeMillis()
+        
+        logger.info { "=== THIRD PARTY API: AFIS RESULT CHECK REQUEST ===" }
+        logger.info { "URL: $resultCheckUrl" }
+        logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
+        
+        apiLogger.logRequest("AFIS_RESULT_CHECK", resultCheckUrl, "{}", accessToken)
+        
+        try {
+            val response: AfisResultResponse = client.get(resultCheckUrl) {
+                header("Authorization", "Bearer $accessToken")
+            }.body()
+            
+            val duration = System.currentTimeMillis() - startTime
+            
+            logger.info { "=== THIRD PARTY API: AFIS RESULT CHECK RESPONSE ===" }
+            logger.info { "Response Body:\n$response" }
+            
+            apiLogger.logResponse("AFIS_RESULT_CHECK", response, duration)
+            
+            return response
+        } catch (e: Exception) {
+            val duration = System.currentTimeMillis() - startTime
+            apiLogger.logError("AFIS_RESULT_CHECK", e, duration)
+            
+            when {
+                e.message?.contains("503") == true || e.message?.contains("Service Unavailable") == true -> 
+                    throw Exception("503 Service Unavailable")
+                e.message?.contains("500") == true || e.message?.contains("Internal Server Error") == true -> 
+                    throw Exception("500 Internal Server Error")
+                e.message?.contains("401") == true || e.message?.contains("Unauthorized") == true -> 
+                    throw Exception("401 Unauthorized")
+                e.message?.contains("400") == true || e.message?.contains("Bad Request") == true -> 
+                    throw Exception("400 Bad Request")
+                e.message?.contains("404") == true || e.message?.contains("Not Found") == true -> 
+                    throw Exception("404 Not Found")
                 e.message?.contains("Connection") == true || 
                 e.message?.contains("timeout") == true || 
                 e.message?.contains("ConnectException") == true -> 

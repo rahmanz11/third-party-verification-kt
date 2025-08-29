@@ -3,6 +3,7 @@ package com.external.verification.routes
 import com.external.verification.services.JwtStorageService
 import com.external.verification.services.ThirdPartyApiService
 import com.external.verification.services.BasicAuthSessionService
+import com.external.verification.models.ThirdPartyLogoutResponse
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -186,6 +187,29 @@ fun Route.webRoutes(
                 )))
             }
         }
+    }
+
+    get("/afis-verification") {
+        val username = call.request.queryParameters["username"] ?: ""
+        val thirdPartyUsername = call.request.queryParameters["thirdPartyUsername"] ?: username
+        
+        if (username.isBlank() || thirdPartyUsername.isBlank()) {
+            call.respondRedirect("/")
+            return@get
+        }
+        
+        val isValidSession = kotlinx.coroutines.runBlocking { basicAuthSessionService.isValidSession(username) }
+        
+        if (!isValidSession) {
+            call.respondRedirect("/")
+            return@get
+        }
+        
+        call.respond(FreeMarkerContent("afis-verification.ftl", mapOf(
+            "title" to "AFIS Verification - Verification System",
+            "username" to username,
+            "thirdPartyUsername" to thirdPartyUsername
+        )))
     }
 
     get("/verification-form") {
@@ -500,9 +524,91 @@ fun Route.webRoutes(
     
     get("/logout") {
         val username = call.request.queryParameters["username"] ?: ""
+        val thirdPartyUsername = call.request.queryParameters["thirdPartyUsername"] ?: username
+        
         if (username.isNotBlank()) {
             kotlinx.coroutines.runBlocking { basicAuthSessionService.removeSession(username) }
         }
+        
+        // Call third-party logout API if we have a JWT
+        if (thirdPartyUsername.isNotBlank()) {
+            try {
+                val jwt = jwtStorageService.getValidJwt(thirdPartyUsername)
+                if (jwt != null) {
+                    kotlinx.coroutines.runBlocking { 
+                        thirdPartyApiService.logout(jwt)
+                        jwtStorageService.removeJwt(thirdPartyUsername)
+                    }
+                }
+            } catch (e: Exception) {
+                // Log the error but don't fail the logout process
+                println("Error during third-party logout: ${e.message}")
+            }
+        }
+        
         call.respondRedirect("/")
+    }
+    
+    post("/third-party-logout") {
+        val formData = call.receiveParameters()
+        val username = formData["username"] ?: ""
+        val thirdPartyUsername = formData["thirdPartyUsername"] ?: username
+        
+        if (username.isBlank()) {
+            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Username is required"))
+            return@post
+        }
+        
+        val isValidSession = kotlinx.coroutines.runBlocking { basicAuthSessionService.isValidSession(username) }
+        if (!isValidSession) {
+            call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Authentication required"))
+            return@post
+        }
+        
+        try {
+            val jwt = jwtStorageService.getValidJwt(thirdPartyUsername)
+            
+            if (jwt == null) {
+                call.respond(HttpStatusCode.BadRequest, ThirdPartyLogoutResponse(
+                    success = false,
+                    message = "No JWT token found. You are not logged in to the third-party service."
+                ))
+                return@post
+            }
+            
+            val logoutResponse = thirdPartyApiService.logout(jwt)
+            
+            if (logoutResponse.status == "OK" && logoutResponse.statusCode == "SUCCESS") {
+                // Only remove JWT if third-party logout was successful
+                jwtStorageService.removeJwt(thirdPartyUsername)
+                
+                call.respond(HttpStatusCode.OK, ThirdPartyLogoutResponse(
+                    success = true,
+                    message = "Successfully logged out from third-party service"
+                ))
+            } else {
+                val errorMessage = logoutResponse.error?.message ?: "Unknown error"
+                call.respond(HttpStatusCode.BadRequest, ThirdPartyLogoutResponse(
+                    success = false,
+                    message = "Third-party logout failed: $errorMessage"
+                ))
+            }
+            
+        } catch (e: Exception) {
+            val errorMessage = when {
+                e.message?.contains("500") == true || e.message?.contains("Internal Server Error") == true -> 
+                    "Third party service not available"
+                e.message?.contains("401") == true || e.message?.contains("Unauthorized") == true -> 
+                    "Authentication failed. JWT token may be expired."
+                e.message?.contains("400") == true || e.message?.contains("Bad Request") == true -> 
+                    "Invalid request to third-party service"
+                else -> "Third-party logout service temporarily unavailable. Please try again later."
+            }
+            
+            call.respond(HttpStatusCode.BadRequest, ThirdPartyLogoutResponse(
+                success = false,
+                message = errorMessage
+            ))
+        }
     }
 }

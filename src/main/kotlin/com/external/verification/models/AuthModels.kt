@@ -99,3 +99,28 @@ data class ThirdPartyBillingResponse(
     val error: String? = null,
     val data: String? = null
 )
+
+@Serializable
+data class LogoutResponse(
+    val status: String,
+    val statusCode: String? = null,
+    val success: SuccessData? = null,
+    val error: ErrorData? = null
+) {
+    @Serializable
+    data class SuccessData(
+        val data: String
+    )
+    
+    @Serializable
+    data class ErrorData(
+        val field: String,
+        val message: String
+    )
+}
+
+@Serializable
+data class ThirdPartyLogoutResponse(
+    val success: Boolean,
+    val message: String
+)

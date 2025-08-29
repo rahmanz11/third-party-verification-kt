@@ -1,6 +1,7 @@
 package com.external.verification.plugins
 
 import com.external.verification.routes.*
+import com.external.verification.routes.afisRoutes
 import com.external.verification.services.ThirdPartyApiService
 import com.external.verification.services.ThirdPartyApiServiceImpl
 import com.external.verification.services.JwtStorageService
@@ -15,13 +16,13 @@ fun Application.configureRouting() {
     val authUrl = environment.config.property("thirdparty.auth-url").getString()
     val verificationUrl = environment.config.property("thirdparty.verification-url").getString()
     val billingUrl = environment.config.property("thirdparty.billing-url").getString()
+    val afisVerificationUrl = environment.config.property("thirdparty.afis-verification-url").getString()
     
-    val thirdPartyApiService: ThirdPartyApiService = ThirdPartyApiServiceImpl(authUrl, verificationUrl, billingUrl)
+    val thirdPartyApiService: ThirdPartyApiService = ThirdPartyApiServiceImpl(authUrl, verificationUrl, billingUrl, afisVerificationUrl)
     val jwtStorageService = JwtStorageService()
     val basicAuthSessionService = BasicAuthSessionService()
     val geoDataService = GeoDataService()
     
-    // Initialize geo data service
     kotlinx.coroutines.runBlocking {
         try {
             geoDataService.initialize()
@@ -50,6 +51,7 @@ fun Application.configureRouting() {
             authRoutes(thirdPartyApiService)
             verificationRoutes(thirdPartyApiService)
             billingRoutes(thirdPartyApiService)
+            afisRoutes(thirdPartyApiService)
         }
     }
 }
