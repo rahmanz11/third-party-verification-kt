@@ -18,7 +18,7 @@
                 <span class="navbar-text me-3">
                     <i class="fas fa-user me-2"></i>Welcome, ${username}
                 </span>
-                <a class="btn btn-outline-danger btn-sm" href="/logout?username=${username}">
+                <a class="btn btn-outline-danger btn-sm" href="/logout?username=${username}&thirdPartyUsername=${thirdPartyUsername!username}">
                     <i class="fas fa-sign-out-alt me-2"></i>Logout
                 </a>
             </div>
@@ -44,14 +44,15 @@
                     </div>
 
                     <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="dashboard-card p-4 h-100">
+                        <!-- First Row: Login, Person Verification, AFIS Verification -->
+                        <div class="col-md-4">
+                            <div class="dashboard-card p-3 h-auto">
                                 <div class="text-center">
                                     <div class="feature-icon bg-primary bg-gradient text-white mx-auto">
                                         <i class="fas fa-key"></i>
                                     </div>
-                                    <h4 class="fw-bold mb-3">Third Party Login</h4>
-                                    <p class="text-muted mb-4">
+                                    <h4 class="fw-bold mb-2">Third Party Login</h4>
+                                    <p class="text-muted mb-3">
                                         Connect to the verification service with your third-party credentials to access verification features.
                                     </p>
                                     <a href="/third-party-login?username=${username}" class="btn btn-primary">
@@ -61,14 +62,14 @@
                             </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="dashboard-card p-4 h-100">
+                        <div class="col-md-4">
+                            <div class="dashboard-card p-3 h-auto">
                                 <div class="text-center">
                                     <div class="feature-icon bg-success bg-gradient text-white mx-auto">
                                         <i class="fas fa-user-check"></i>
                                     </div>
-                                    <h4 class="fw-bold mb-3">Person Verification</h4>
-                                    <p class="text-muted mb-4">
+                                    <h4 class="fw-bold mb-2">Person Verification</h4>
+                                    <p class="text-muted mb-3">
                                         Verify person information using NID and demographic data. Complete verification forms with real-time validation.
                                     </p>
                                     <button class="btn btn-success" onclick="checkThirdPartyLogin()">
@@ -78,14 +79,32 @@
                             </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="dashboard-card p-4 h-100">
+                        <div class="col-md-4">
+                            <div class="dashboard-card p-3 h-auto">
+                                <div class="text-center">
+                                    <div class="feature-icon bg-purple bg-gradient text-white mx-auto">
+                                        <i class="fas fa-id-card"></i>
+                                    </div>
+                                    <h4 class="fw-bold mb-2">AFIS Verification</h4>
+                                    <p class="text-muted mb-3">
+                                        Verify identity using fingerprint biometrics. Upload fingerprint data and check verification results.
+                                    </p>
+                                    <button class="btn btn-purple" onclick="goToAfisVerification()">
+                                        <i class="fas fa-id-card me-2"></i>Start AFIS Verification
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Second Row: Change Password, Billing Report, Logout -->
+                        <div class="col-md-4">
+                            <div class="dashboard-card p-3 h-auto">
                                 <div class="text-center">
                                     <div class="feature-icon bg-warning bg-gradient text-white mx-auto">
                                         <i class="fas fa-key"></i>
                                     </div>
-                                    <h4 class="fw-bold mb-3">Change Password</h4>
-                                    <p class="text-muted mb-4">
+                                    <h4 class="fw-bold mb-2">Change Password</h4>
+                                    <p class="text-muted mb-3">
                                         Update your third-party verification service password securely. 
                                         Session will be terminated after successful password change.
                                     </p>
@@ -96,14 +115,14 @@
                             </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="dashboard-card p-4 h-100">
+                        <div class="col-md-4">
+                            <div class="dashboard-card p-3 h-auto">
                                 <div class="text-center">
                                     <div class="feature-icon bg-info bg-gradient text-white mx-auto">
                                         <i class="fas fa-chart-line"></i>
                                     </div>
-                                    <h4 class="fw-bold mb-3">Billing Report</h4>
-                                    <p class="text-muted mb-4">
+                                    <h4 class="fw-bold mb-2">Billing Report</h4>
+                                    <p class="text-muted mb-3">
                                         Generate detailed billing reports and view usage statistics 
                                         for your third-party verification service.
                                     </p>
@@ -114,8 +133,23 @@
                             </div>
                         </div>
 
-
-
+                        <div class="col-md-4">
+                            <div class="dashboard-card p-3 h-auto">
+                                <div class="text-center">
+                                    <div class="feature-icon bg-danger bg-gradient text-white mx-auto">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    </div>
+                                    <h4 class="fw-bold mb-2">Third Party Logout</h4>
+                                    <p class="text-muted mb-3">
+                                        Logout from the third-party verification service. This will invalidate your JWT token 
+                                        and terminate the third-party session while keeping your local session active.
+                                    </p>
+                                    <button class="btn btn-danger" onclick="thirdPartyLogout()">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Third Party Logout
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
                 </div>

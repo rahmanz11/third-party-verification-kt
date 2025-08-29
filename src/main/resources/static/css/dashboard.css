@@ -74,14 +74,14 @@ body {
 }
 
 .feature-icon {
-    width: 80px;
-    height: 80px;
-    border-radius: 20px;
+    width: 70px;
+    height: 70px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
-    margin-bottom: 24px;
+    font-size: 24px;
+    margin-bottom: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
 }
@@ -106,18 +106,22 @@ body {
     background: linear-gradient(135deg, #17a2b8, #6f42c1) !important;
 }
 
+.feature-icon.bg-purple {
+    background: linear-gradient(135deg, #6f42c1, #5a32a3) !important;
+}
+
 .dashboard-card h4 {
     color: #2c3e50;
     font-weight: 700;
-    margin-bottom: 16px;
-    font-size: 1.3rem;
+    margin-bottom: 12px;
+    font-size: 1.2rem;
 }
 
 .dashboard-card p {
     color: #6c757d;
-    line-height: 1.6;
-    margin-bottom: 24px;
-    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 18px;
+    font-size: 0.9rem;
 }
 
 .btn {
@@ -173,6 +177,16 @@ body {
 
 .btn-info:hover {
     background: linear-gradient(135deg, #138496, #5a32a3);
+    color: white;
+}
+
+.btn-purple {
+    background: linear-gradient(135deg, #6f42c1, #5a32a3);
+    color: white;
+}
+
+.btn-purple:hover {
+    background: linear-gradient(135deg, #5a32a3, #4a2a8a);
     color: white;
 }
 

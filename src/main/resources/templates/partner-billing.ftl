@@ -30,7 +30,7 @@
                 <span class="navbar-text me-3">
                     <i class="fas fa-user me-2"></i>Welcome, ${username}
                 </span>
-                <a class="btn btn-outline-danger btn-sm" href="/logout?username=${username}">
+                <a class="btn btn-outline-danger btn-sm" href="/logout?username=${username}&thirdPartyUsername=${thirdPartyUsername!username}">
                     <i class="fas fa-sign-out-alt me-2"></i>Logout
                 </a>
             </div>
