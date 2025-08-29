@@ -1,0 +1,30 @@
+# Gradle build output
+/gradle/
+/.kotlin/
+/.vscode/
+/build/
+/log/
+/.gradle/
+*.jar
+*.war
+*.zip
+
+# IDE-specific files
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# Local configuration
+local.properties
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp

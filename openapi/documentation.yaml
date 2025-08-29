@@ -127,7 +127,289 @@ paths:
   /logout:
     get:
       summary: Logout
-      description: Logout user
+      description: Logout user from both local session and third-party service
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Local username
+        - name: thirdPartyUsername
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Third-party username for API logout
       responses:
         '200':
           description: Logout successful
+        '302':
+          description: Redirect to login page
+  /third-party-logout:
+    post:
+      summary: Third party logout
+      description: Logout from third-party service only, keeping local session active
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: Local username
+                thirdPartyUsername:
+                  type: string
+                  description: Third-party username for API logout
+      responses:
+        '200':
+          description: Third-party logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: Bad request or logout failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+
+  /afis-verification:
+    get:
+      summary: AFIS verification page
+      description: Returns the AFIS verification page
+      responses:
+        '200':
+          description: AFIS verification page HTML
+
+  /partner-service/rest/afis/verification-secured:
+    post:
+      summary: AFIS Verification - Secured
+      description: Submit AFIS verification request with fingerprint selection
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dateOfBirth
+                - fingerEnums
+              properties:
+                dateOfBirth:
+                  type: string
+                  format: date
+                  description: Date of Birth of NID holder
+                nid10Digit:
+                  type: string
+                  maxLength: 10
+                  description: 10-digit NID number
+                nid17Digit:
+                  type: string
+                  maxLength: 17
+                  description: 17-digit NID number
+                fingerEnums:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - RIGHT_THUMB
+                      - RIGHT_INDEX
+                      - RIGHT_MIDDLE
+                      - RIGHT_RING
+                      - RIGHT_LITTLE
+                      - LEFT_THUMB
+                      - LEFT_INDEX
+                      - LEFT_MIDDLE
+                      - LEFT_RING
+                      - LEFT_LITTLE
+                  description: List of fingers for fingerprint verification
+      responses:
+        '200':
+          description: Verification request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfisVerificationResponse'
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '401':
+          description: Unauthorized - Bearer token required
+        '403':
+          description: Forbidden - voter locked or access denied
+        '500':
+          description: Internal server error
+
+  /partner-service/rest/afis/verification/result/{jobId}:
+    get:
+      summary: Check AFIS verification result
+      description: Check the status and result of an AFIS verification job
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Job ID from verification request
+      responses:
+        '200':
+          description: Result check successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfisResultResponse'
+        '400':
+          description: Bad request - invalid job ID
+        '401':
+          description: Unauthorized - Bearer token required
+        '404':
+          description: Job not found
+        '500':
+          description: Internal server error
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AfisVerificationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ACCEPTED, FORBIDDEN]
+        statusCode:
+          type: string
+          enum: [SUCCESS, ERROR]
+        success:
+          $ref: '#/components/schemas/AfisSuccessData'
+        error:
+          $ref: '#/components/schemas/AfisErrorData'
+
+    AfisSuccessData:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/AfisData'
+
+    AfisData:
+      type: object
+      properties:
+        fingerUploadUrls:
+          type: array
+          items:
+            $ref: '#/components/schemas/FingerUploadUrl'
+        resultCheckApi:
+          type: string
+          description: URL to check verification result
+
+    FingerUploadUrl:
+      type: object
+      properties:
+        finger:
+          type: string
+          enum:
+            - RIGHT_THUMB
+            - RIGHT_INDEX
+            - RIGHT_MIDDLE
+            - RIGHT_RING
+            - RIGHT_LITTLE
+            - LEFT_THUMB
+            - LEFT_INDEX
+            - LEFT_MIDDLE
+            - LEFT_RING
+            - LEFT_LITTLE
+        url:
+          type: string
+          format: uri
+          description: Pre-signed URL for fingerprint upload
+
+    AfisErrorData:
+      type: object
+      properties:
+        field:
+          type: string
+          description: Field with error
+        message:
+          type: string
+          description: Error message
+
+    AfisResultResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [OK, UNAUTHORIZED]
+        statusCode:
+          type: string
+          enum: [SUCCESS, ERROR]
+        success:
+          $ref: '#/components/schemas/AfisResultSuccessData'
+        error:
+          $ref: '#/components/schemas/AfisErrorData'
+
+    AfisResultSuccessData:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/AfisResultData'
+
+    AfisResultData:
+      type: object
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        result:
+          type: string
+          enum: [PROCESSING_PENDING, MATCH_FOUND, NO_MATCH_FOUND]
+        verificationResponse:
+          $ref: '#/components/schemas/AfisVerificationResult'
+        errorReason:
+          type: string
+          enum: [NID_OR_DOB_NOT_MATCH, FINGER_PRINT_NOT_MATCH]
+
+    AfisVerificationResult:
+      type: object
+      properties:
+        voterInfo:
+          $ref: '#/components/schemas/VoterInfo'
+
+    VoterInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nationalId:
+          type: string
