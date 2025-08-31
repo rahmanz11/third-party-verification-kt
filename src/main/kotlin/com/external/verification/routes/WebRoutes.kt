@@ -212,6 +212,29 @@ fun Route.webRoutes(
         )))
     }
 
+    get("/fingerprint-capture") {
+        val username = call.request.queryParameters["username"] ?: ""
+        val thirdPartyUsername = call.request.queryParameters["thirdPartyUsername"] ?: username
+        
+        if (username.isBlank() || thirdPartyUsername.isBlank()) {
+            call.respondRedirect("/")
+            return@get
+        }
+        
+        val isValidSession = kotlinx.coroutines.runBlocking { basicAuthSessionService.isValidSession(username) }
+        
+        if (!isValidSession) {
+            call.respondRedirect("/")
+            return@get
+        }
+        
+        call.respond(FreeMarkerContent("fingerprint-capture.ftl", mapOf(
+            "title" to "Fingerprint Capture - Verification System",
+            "username" to username,
+            "thirdPartyUsername" to thirdPartyUsername
+        )))
+    }
+
     get("/verification-form") {
         val username = call.request.queryParameters["username"] ?: ""
         val thirdPartyUsername = call.request.queryParameters["thirdPartyUsername"] ?: username

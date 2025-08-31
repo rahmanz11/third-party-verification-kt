@@ -90,7 +90,24 @@
                                         Verify identity using fingerprint biometrics. Upload fingerprint data and check verification results.
                                     </p>
                                     <button class="btn btn-purple" onclick="goToAfisVerification()">
-                                        <i class="fas fa-id-card me-2"></i>Start AFIS Verification
+                                        <i class="fas fa-id-card"></i>Start AFIS Verification
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="dashboard-card p-3 h-auto">
+                                <div class="text-center">
+                                    <div class="feature-icon bg-indigo bg-gradient text-white mx-auto">
+                                        <i class="fas fa-fingerprint"></i>
+                                    </div>
+                                    <h4 class="fw-bold mb-2">Fingerprint Capture</h4>
+                                    <p class="text-muted mb-3">
+                                        Capture live fingerprints from connected devices. Real-time quality assessment and WSQ conversion.
+                                    </p>
+                                    <button class="btn btn-indigo" onclick="goToFingerprintCapture()">
+                                        <i class="fas fa-fingerprint"></i>Start Fingerprint Capture
                                     </button>
                                 </div>
                             </div>

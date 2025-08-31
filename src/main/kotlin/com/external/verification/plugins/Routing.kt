@@ -7,6 +7,7 @@ import com.external.verification.services.ThirdPartyApiServiceImpl
 import com.external.verification.services.JwtStorageService
 import com.external.verification.services.BasicAuthSessionService
 import com.external.verification.services.GeoDataService
+import com.external.verification.services.FingerprintDeviceService
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
@@ -22,6 +23,7 @@ fun Application.configureRouting() {
     val jwtStorageService = JwtStorageService()
     val basicAuthSessionService = BasicAuthSessionService()
     val geoDataService = GeoDataService()
+    val fingerprintDeviceService = FingerprintDeviceService()
     
     kotlinx.coroutines.runBlocking {
         try {
@@ -46,6 +48,9 @@ fun Application.configureRouting() {
         
         webRoutes(thirdPartyApiService, jwtStorageService, basicAuthSessionService)
         geoRoutes(geoDataService, basicAuthSessionService)
+        
+        // Add fingerprint routes
+        fingerprintRoutes(fingerprintDeviceService)
         
         route("/partner-service/rest") {
             authRoutes(thirdPartyApiService)

@@ -181,12 +181,26 @@ body {
 }
 
 .btn-purple {
-    background: linear-gradient(135deg, #6f42c1, #5a32a3);
+    background-color: #6f42c1;
+    border-color: #6f42c1;
     color: white;
 }
 
 .btn-purple:hover {
-    background: linear-gradient(135deg, #5a32a3, #4a2a8a);
+    background-color: #5a32a3;
+    border-color: #5a32a3;
+    color: white;
+}
+
+.btn-indigo {
+    background-color: #3f51b5;
+    border-color: #3f51b5;
+    color: white;
+}
+
+.btn-indigo:hover {
+    background-color: #303f9f;
+    border-color: #303f9f;
     color: white;
 }
 
