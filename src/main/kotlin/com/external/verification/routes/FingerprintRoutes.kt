@@ -124,6 +124,34 @@ fun Route.fingerprintRoutes(fingerprintDeviceService: FingerprintDeviceService) 
             }
         }
         
+        // Check Digital Persona SDK initialization status
+        get("/device/sdk-status") {
+            try {
+                val sdkStatus = fingerprintDeviceService.getSDKStatus()
+                call.respond(HttpStatusCode.OK, sdkStatus)
+                
+            } catch (e: Exception) {
+                logger.error(e) { "Error getting SDK status" }
+                call.respond(HttpStatusCode.InternalServerError, mapOf(
+                    "error" to "Failed to get SDK status: ${e.message}"
+                ))
+            }
+        }
+        
+        // Manually reinitialize Digital Persona SDK
+        post("/device/reinitialize-sdk") {
+            try {
+                val response = fingerprintDeviceService.reinitializeSDK()
+                call.respond(HttpStatusCode.OK, response)
+                
+            } catch (e: Exception) {
+                logger.error(e) { "Error reinitializing SDK" }
+                call.respond(HttpStatusCode.InternalServerError, mapOf(
+                    "error" to "Failed to reinitialize SDK: ${e.message}"
+                ))
+            }
+        }
+        
         // Fingerprint capture endpoints
         post("/capture") {
             try {

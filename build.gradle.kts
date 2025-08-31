@@ -82,4 +82,37 @@ ktor {
 
 application {
     mainClass.set("com.external.verification.ApplicationKt")
+    
+    // Set system properties for Digital Persona SDK native libraries
+    applicationDefaultJvmArgs = listOf(
+        "-Djava.library.path=native",
+        "-Ddpotapi.native.path=native"
+    )
+}
+
+// Copy native DLLs to build directory
+tasks.register<Copy>("copyNativeLibraries") {
+    from("native")
+    into("build/libs")
+}
+
+// Copy native libraries to system temp directory for runtime access
+tasks.register<Copy>("copyNativeLibrariesToTemp") {
+    from("native")
+    into("${System.getProperty("java.io.tmpdir")}/verification-native")
+}
+
+// Ensure native libraries are copied before jar task
+tasks.named("jar") {
+    dependsOn("copyNativeLibraries")
+}
+
+// Ensure start scripts depend on native libraries
+tasks.named("startShadowScripts") {
+    dependsOn("copyNativeLibraries")
+}
+
+// Ensure run task depends on native libraries and copies them to temp
+tasks.named("run") {
+    dependsOn("copyNativeLibraries", "copyNativeLibrariesToTemp")
 }

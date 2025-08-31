@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream
 import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 import java.util.Base64
+import java.io.File
 
 // Digital Persona SDK imports - Real implementation
 import com.digitalpersona.onetouch.*
@@ -53,7 +54,48 @@ class FingerprintDeviceService {
     )
     
     init {
+        // Set native library path before initializing SDK
+        setupNativeLibraryPath()
         initializeSDK()
+    }
+    
+    /**
+     * Setup native library path for Digital Persona SDK
+     */
+    private fun setupNativeLibraryPath() {
+        try {
+            val nativePath = System.getProperty("java.library.path")
+            val projectNativePath = File("native").absolutePath
+            val tempNativePath = File(System.getProperty("java.io.tmpdir"), "verification-native").absolutePath
+            
+            // Add both paths to the library path - project directory first, then temp directory
+            val pathsToAdd = mutableListOf<String>()
+            if (File(projectNativePath).exists()) {
+                pathsToAdd.add(projectNativePath)
+            }
+            if (File(tempNativePath).exists()) {
+                pathsToAdd.add(tempNativePath)
+            }
+            
+            if (pathsToAdd.isNotEmpty()) {
+                val newPath = if (nativePath.isNullOrBlank()) {
+                    pathsToAdd.joinToString(File.pathSeparator)
+                } else {
+                    "$nativePath${File.pathSeparator}${pathsToAdd.joinToString(File.pathSeparator)}"
+                }
+                
+                System.setProperty("java.library.path", newPath)
+                logger.info { "Set native library path to: $newPath" }
+            }
+            
+            // Set the Digital Persona specific path - prefer project directory, fallback to temp
+            val dpotapiPath = if (File(projectNativePath).exists()) projectNativePath else tempNativePath
+            System.setProperty("dpotapi.native.path", dpotapiPath)
+            logger.info { "Set dpotapi.native.path to: $dpotapiPath" }
+            
+        } catch (e: Exception) {
+            logger.warn(e) { "Failed to set native library path, continuing with default" }
+        }
     }
     
     /**
@@ -63,8 +105,36 @@ class FingerprintDeviceService {
         try {
             logger.info { "Initializing Digital Persona SDK..." }
             
+            // Check if native libraries are accessible
+            try {
+                // Try to use the SDK directly without explicitly loading otmcjni.dll
+                // The Digital Persona SDK might handle native library loading internally
+                logger.info { "Attempting to use Digital Persona SDK without explicit native library loading" }
+            } catch (e: UnsatisfiedLinkError) {
+                logger.warn(e) { "Failed to use SDK directly, trying alternative paths" }
+                
+                // Try project directory first
+                try {
+                    val projectPath = File("native/otmcjni.dll").absolutePath
+                    System.load(projectPath)
+                    logger.info { "Successfully loaded otmcjni from project path: $projectPath" }
+                } catch (e2: Exception) {
+                    logger.warn(e2) { "Failed to load otmcjni from project path, trying temp directory" }
+                    
+                    // Try temp directory as fallback
+                    try {
+                        val tempPath = File(System.getProperty("java.io.tmpdir"), "verification-native/otmcjni.dll").absolutePath
+                        System.load(tempPath)
+                        logger.info { "Successfully loaded otmcjni from temp path: $tempPath" }
+                    } catch (e3: Exception) {
+                        logger.warn(e3) { "Failed to load otmcjni from temp path" }
+                    }
+                }
+            }
+            
             // Initialize capture control using factory - CORRECT SDK USAGE
             captureControl = DPFPGlobal.getCaptureFactory().createCapture()
+            logger.info { "Capture control initialized successfully" }
             
             // Add data listener for fingerprint capture
             captureControl?.addDataListener(object : DPFPDataAdapter() {
@@ -97,14 +167,40 @@ class FingerprintDeviceService {
             
             // Initialize enrollment control
             enrollmentControl = DPFPEnrollmentControl()
+            logger.info { "Enrollment control initialized successfully" }
             
             // Initialize verification control
             verificationControl = DPFPVerificationControl()
+            logger.info { "Verification control initialized successfully" }
             
             logger.info { "Digital Persona SDK initialized successfully with real components" }
             
         } catch (e: Exception) {
-            logger.error(e) { "Failed to initialize Digital Persona SDK" }
+            logger.error(e) { "Failed to initialize Digital Persona SDK: ${e.message}" }
+            logger.error(e) { "Stack trace: ${e.stackTraceToString()}" }
+            
+            // Try to provide more specific error information
+            when (e) {
+                is UnsatisfiedLinkError -> {
+                    val missingLibs = getMissingNativeLibraries()
+                    if (missingLibs.isNotEmpty()) {
+                        logger.error { "Native library loading failed. Missing required libraries: ${missingLibs.joinToString(", ")}" }
+                        logger.error { "CRITICAL: otmcjni.dll (One Touch for Microsoft Windows JNI) is required for fingerprint functionality" }
+                        logger.error { "Please ensure all required DLL files are in the native directory or obtain them from Digital Persona SDK installation" }
+                    } else {
+                        logger.error { "Native library loading failed. Please ensure DLL files are in the native directory." }
+                    }
+                }
+                is ClassNotFoundException -> {
+                    logger.error { "Digital Persona SDK classes not found. Please ensure JAR files are in the libs directory." }
+                }
+                is NoClassDefFoundError -> {
+                    logger.error { "Digital Persona SDK class definition not found. Please check JAR file dependencies." }
+                }
+                else -> {
+                    logger.error { "Unknown error during SDK initialization: ${e.javaClass.simpleName}" }
+                }
+            }
         }
     }
     
@@ -445,11 +541,208 @@ class FingerprintDeviceService {
     }
     
     /**
+     * Check if Digital Persona SDK is properly initialized
+     */
+    fun isSDKInitialized(): Boolean {
+        return try {
+            captureControl != null && 
+            enrollmentControl != null && 
+            verificationControl != null
+        } catch (e: Exception) {
+            logger.warn(e) { "Error checking SDK initialization status" }
+            false
+        }
+    }
+    
+    /**
+     * Check if all required native libraries are available
+     */
+    fun areNativeLibrariesAvailable(): Boolean {
+        val requiredLibraries = listOf(
+            "otmcjni.dll",  // One Touch for Microsoft Windows JNI
+            "DPJasPer.dll", // Digital Persona JasPer library
+            "DPTSClnt.dll"  // Digital Persona TS Client library
+        )
+        
+        val nativeDir = File("native")
+        val tempDir = File(System.getProperty("java.io.tmpdir"), "verification-native")
+        
+        return requiredLibraries.all { libraryName ->
+            val projectPath = File(nativeDir, libraryName)
+            val tempPath = File(tempDir, libraryName)
+            projectPath.exists() || tempPath.exists()
+        }
+    }
+    
+    /**
+     * Get list of missing native libraries
+     */
+    fun getMissingNativeLibraries(): List<String> {
+        val requiredLibraries = listOf(
+            "otmcjni.dll",  // One Touch for Microsoft Windows JNI
+            "DPJasPer.dll", // Digital Persona JasPer library
+            "DPTSClnt.dll"  // Digital Persona TS Client library
+        )
+        
+        val nativeDir = File("native")
+        val tempDir = File(System.getProperty("java.io.tmpdir"), "verification-native")
+        
+        return requiredLibraries.filter { libraryName ->
+            val projectPath = File(nativeDir, libraryName)
+            val tempPath = File(tempDir, libraryName)
+            !projectPath.exists() && !tempPath.exists()
+        }
+    }
+    
+    /**
+     * Get guidance on how to obtain missing native libraries
+     */
+    fun getNativeLibraryGuidance(): Map<String, String> {
+        val missingLibs = getMissingNativeLibraries()
+        val guidance = mutableMapOf<String, String>()
+        
+        if (missingLibs.contains("otmcjni.dll")) {
+            guidance["otmcjni.dll"] = """
+                CRITICAL: otmcjni.dll (One Touch for Microsoft Windows JNI) is missing!
+                
+                This library is required for fingerprint functionality and can be obtained by:
+                
+                1. Installing Digital Persona One Touch for Microsoft Windows SDK
+                2. Copying otmcjni.dll from the SDK installation directory
+                3. Placing it in the 'native' directory of this project
+                
+                Download from: https://www.digitalpersona.com/developers/
+                Or check your Digital Persona SDK installation package.
+                
+                Expected location: native/otmcjni.dll
+            """.trimIndent()
+        }
+        
+        if (missingLibs.contains("DPJasPer.dll")) {
+            guidance["DPJasPer.dll"] = """
+                DPJasPer.dll (Digital Persona JasPer library) is missing.
+                
+                This library is part of the Digital Persona SDK and handles image processing.
+                Copy it from your Digital Persona SDK installation to the 'native' directory.
+                
+                Expected location: native/DPJasPer.dll
+            """.trimIndent()
+        }
+        
+        if (missingLibs.contains("DPTSClnt.dll")) {
+            guidance["DPTSClnt.dll"] = """
+                DPTSClnt.dll (Digital Persona TS Client library) is missing.
+                
+                This library is part of the Digital Persona SDK and handles client operations.
+                Copy it from your Digital Persona SDK installation to the 'native' directory.
+                
+                Expected location: native/DPTSClnt.dll
+            """.trimIndent()
+        }
+        
+        return guidance
+    }
+    
+    /**
+     * Get SDK initialization status with detailed information
+     */
+    fun getSDKStatus(): Map<String, Any> {
+        return mapOf(
+            "sdkInitialized" to isSDKInitialized(),
+            "captureControl" to (captureControl != null),
+            "enrollmentControl" to (enrollmentControl != null),
+            "verificationControl" to (verificationControl != null),
+            "nativeLibrariesAvailable" to areNativeLibrariesAvailable(),
+            "missingNativeLibraries" to getMissingNativeLibraries(),
+            "nativeLibrariesLoaded" to try {
+                // Try to use the SDK directly without explicit native library loading
+                true
+            } catch (e: Exception) {
+                try {
+                    val projectPath = File("native/otmcjni.dll").absolutePath
+                    System.load(projectPath)
+                    true
+                } catch (e2: Exception) {
+                    try {
+                        val tempPath = File(System.getProperty("java.io.tmpdir"), "verification-native/otmcjni.dll").absolutePath
+                        System.load(tempPath)
+                        true
+                    } catch (e3: Exception) {
+                        false
+                    }
+                }
+            },
+            "nativePath" to System.getProperty("java.library.path"),
+            "dpotapiNativePath" to System.getProperty("dpotapi.native.path"),
+            "nativeDirectoryExists" to File("native").exists(),
+            "nativeDllExists" to File("native/otmcjni.dll").exists(),
+            "nativeDllAbsolutePath" to File("native/otmcjni.dll").absolutePath,
+            "tempDirectoryExists" to File(System.getProperty("java.io.tmpdir"), "verification-native").exists(),
+            "tempDirectoryDllExists" to File(System.getProperty("java.io.tmpdir"), "verification-native/otmcjni.dll").exists(),
+            "requiredLibraries" to listOf(
+                "otmcjni.dll - One Touch for Microsoft Windows JNI (REQUIRED)",
+                "DPJasPer.dll - Digital Persona JasPer library",
+                "DPTSClnt.dll - Digital Persona TS Client library"
+            ),
+            "missingLibrariesGuidance" to getNativeLibraryGuidance()
+        )
+    }
+    
+    /**
+     * Manually reinitialize the Digital Persona SDK
+     */
+    suspend fun reinitializeSDK(): Map<String, Any> {
+        return withContext(Dispatchers.IO) {
+            try {
+                logger.info { "Manually reinitializing Digital Persona SDK..." }
+                
+                // Clear existing components
+                captureControl = null
+                enrollmentControl = null
+                verificationControl = null
+                
+                // Setup native library path again
+                setupNativeLibraryPath()
+                
+                // Reinitialize SDK
+                initializeSDK()
+                
+                val status = getSDKStatus()
+                logger.info { "SDK reinitialization completed. Status: $status" }
+                
+                mapOf(
+                    "success" to true,
+                    "message" to "SDK reinitialized successfully",
+                    "status" to status
+                )
+                
+            } catch (e: Exception) {
+                logger.error(e) { "Failed to reinitialize SDK" }
+                mapOf(
+                    "success" to false,
+                    "error" to "SDK reinitialization failed: ${e.message}",
+                    "status" to getSDKStatus()
+                )
+            }
+        }
+    }
+    
+    /**
      * Capture fingerprint from device using Digital Persona SDK
      */
     suspend fun captureFingerprint(request: FingerprintCaptureRequest): FingerprintCaptureResponse {
         return withContext(Dispatchers.IO) {
             try {
+                // CRITICAL FIX: Check if SDK is properly initialized
+                if (!isSDKInitialized()) {
+                    logger.error { "Digital Persona SDK not properly initialized" }
+                    return@withContext FingerprintCaptureResponse(
+                        success = false,
+                        fingerType = request.fingerType,
+                        error = "SDK not initialized. Status: ${getSDKStatus()}"
+                    )
+                }
+                
                 // CRITICAL FIX: Ensure device is connected before starting capture
                 val deviceStatus = getDeviceStatus()
                 if (!deviceStatus.connected) {
@@ -500,33 +793,24 @@ class FingerprintDeviceService {
                     }
                 }
                 
-                // Simulate capture process with progress updates
-                repeat(5) { step ->
-                    if (captureSession.isCancelled()) {
-                        try {
-                            captureControl?.stopCapture() // Stop capture if cancelled
-                        } catch (e: Exception) {
-                            logger.debug { "Error stopping capture: ${e.message}" }
-                        }
-                        captureInProgress.set(false)
-                        return@withContext FingerprintCaptureResponse(
-                            success = false,
-                            fingerType = request.fingerType,
-                            error = "Capture cancelled"
-                        )
-                    }
+                // Wait for actual fingerprint capture with timeout
+                val captureTimeout = request.captureTimeout ?: 30000 // 30 seconds default
+                val startTime = System.currentTimeMillis()
+                
+                while (lastCapturedSample == null && 
+                       (System.currentTimeMillis() - startTime) < captureTimeout &&
+                       !captureSession.isCancelled()) {
+                    
+                    delay(100) // Check every 100ms
                     
                     // CRITICAL FIX: Maintain device connection during capture
                     if (!deviceConnected.get()) {
                         logger.warn { "Device connection lost during capture, restoring connection" }
                         deviceConnected.set(true)
                     }
-                    
-                    delay(500) // Simulate processing time
-                    captureSession.updateProgress((step + 1) * 20)
                 }
                 
-                // Stop capture after simulation
+                // Stop capture after timeout or sample acquisition
                 try {
                     captureControl?.stopCapture()
                     captureInProgress.set(false)
@@ -562,6 +846,9 @@ class FingerprintDeviceService {
                     
                     val captureTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                     
+                    // Clear the sample for next capture
+                    lastCapturedSample = null
+                    
                     FingerprintCaptureResponse(
                         success = quality.isAcceptable,
                         fingerType = request.fingerType,
@@ -571,11 +858,20 @@ class FingerprintDeviceService {
                         captureTime = captureTime
                     )
                 } else {
-                    FingerprintCaptureResponse(
-                        success = false,
-                        fingerType = request.fingerType,
-                        error = "No sample captured"
-                    )
+                    // Check if capture was cancelled
+                    if (captureSession.isCancelled()) {
+                        FingerprintCaptureResponse(
+                            success = false,
+                            fingerType = request.fingerType,
+                            error = "Capture cancelled"
+                        )
+                    } else {
+                        FingerprintCaptureResponse(
+                            success = false,
+                            fingerType = request.fingerType,
+                            error = "No sample captured within timeout period"
+                        )
+                    }
                 }
                 
             } catch (e: Exception) {
