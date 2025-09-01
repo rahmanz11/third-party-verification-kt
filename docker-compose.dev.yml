@@ -4,7 +4,7 @@ services:
   verification-app-dev:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.dev.alternative
     ports:
       - "8080:8080"
     environment:
@@ -16,9 +16,11 @@ services:
       - ./build.gradle.kts:/app/build.gradle.kts
       - ./settings.gradle.kts:/app/settings.gradle.kts
       - ./gradle:/app/gradle
-      - ./gradlew:/app/gradlew
-      - ./gradlew.bat:/app/gradlew.bat
+      # Mount libs directory for dependencies
+      - ./libs:/app/libs
       # Mount logs directory
       - ./logs:/app/logs
+      # Mount OpenAPI documentation for Swagger
+      - ./openapi:/app/openapi
     restart: unless-stopped
-    command: ["./gradlew", "run", "--continuous"]
+    command: ["gradle", "run", "--continuous"]

@@ -7,22 +7,15 @@ WORKDIR /app
 # Copy gradle files first for better caching
 COPY build.gradle.kts settings.gradle.kts ./
 COPY gradle gradle
-COPY gradlew gradlew.bat ./
 
-# Fix line endings and make gradlew executable
-RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
-
-# Verify gradlew is working
-RUN ls -la gradlew && file gradlew
-
-# Download dependencies
-RUN ./gradlew dependencies --no-daemon
+# Use gradle command directly instead of gradlew
+RUN gradle dependencies --no-daemon
 
 # Copy source code
 COPY src src
 
-# Build the application
-RUN ./gradlew buildFatJar --no-daemon
+# Build the application using gradle command
+RUN gradle buildFatJar --no-daemon
 
 # Runtime stage
 FROM openjdk:21-slim

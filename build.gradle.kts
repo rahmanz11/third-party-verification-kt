@@ -46,11 +46,11 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.4.11")
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
 
-    // Digital Persona SDK - Real JAR files
-    implementation(files("libs/dpfpenrollment.jar"))
-    implementation(files("libs/dpfpverification.jar"))
-    implementation(files("libs/dpotapi.jar"))
-    implementation(files("libs/dpotjni.jar"))
+    // Digital Persona SDK - Real JAR files - DISABLED due to missing otmcjni.dll
+    // implementation(files("libs/dpfpenrollment.jar"))
+    // implementation(files("libs/dpfpverification.jar"))
+    // implementation(files("libs/dpotapi.jar"))
+    // implementation(files("libs/dpotjni.jar"))
     
     // Image processing for fingerprint conversion
     implementation("org.apache.commons:commons-imaging:1.0-alpha3")
@@ -86,7 +86,7 @@ application {
     // Set system properties for Digital Persona SDK native libraries
     applicationDefaultJvmArgs = listOf(
         "-Djava.library.path=native",
-        "-Ddpotapi.native.path=native"
+        // "-Ddpotapi.native.path=native"  // DISABLED due to missing otmcjni.dll
     )
 }
 
