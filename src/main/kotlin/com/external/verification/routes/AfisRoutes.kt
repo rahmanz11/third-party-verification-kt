@@ -8,8 +8,14 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import mu.KotlinLogging
+import kotlinx.serialization.json.Json
 
 private val logger = KotlinLogging.logger {}
+private val jsonPrinter = Json { 
+    prettyPrint = true 
+    isLenient = true 
+    ignoreUnknownKeys = true 
+}
 
 fun Route.afisRoutes(thirdPartyApiService: ThirdPartyApiService) {
     
@@ -18,7 +24,7 @@ fun Route.afisRoutes(thirdPartyApiService: ThirdPartyApiService) {
         post("/verification-secured") {
             try {
                 val afisRequest = call.receive<AfisVerificationRequest>()
-                logger.info { "AFIS Verification Request: $afisRequest" }
+                logger.info { "AFIS Verification Request: ${jsonPrinter.encodeToString(afisRequest)}" }
                 
                 // Get JWT from Authorization header
                 val authHeader = call.request.header("Authorization")

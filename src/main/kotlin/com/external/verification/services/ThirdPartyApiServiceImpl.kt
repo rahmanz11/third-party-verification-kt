@@ -5,9 +5,13 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import kotlinx.serialization.encodeToString
 import mu.KotlinLogging
 
@@ -41,7 +45,7 @@ class ThirdPartyApiServiceImpl(
         
         logger.info { "=== THIRD PARTY API: LOGIN REQUEST ===" }
         logger.info { "URL: $authUrl" }
-        logger.info { "Request Body:\n$loginRequest" }
+        logger.info { "Request Body:\n${jsonPrinter.encodeToString(loginRequest)}" }
         
         apiLogger.logRequest("LOGIN", "$authUrl", loginRequest)
         
@@ -54,7 +58,7 @@ class ThirdPartyApiServiceImpl(
             val duration = System.currentTimeMillis() - startTime
             
             logger.info { "=== THIRD PARTY API: LOGIN RESPONSE ===" }
-            logger.info { "Response Body:\n$response" }
+            logger.info { "Response Body:\n${jsonPrinter.encodeToString(response)}" }
             
             apiLogger.logResponse("LOGIN", response, duration)
             
@@ -105,7 +109,7 @@ class ThirdPartyApiServiceImpl(
             val duration = System.currentTimeMillis() - startTime
             
             logger.info { "=== THIRD PARTY API: LOGOUT RESPONSE ===" }
-            logger.info { "Response Body:\n$response" }
+            logger.info { "Response Body:\n${jsonPrinter.encodeToString(response)}" }
             
             apiLogger.logResponse("LOGOUT", response, duration)
             
@@ -136,6 +140,8 @@ class ThirdPartyApiServiceImpl(
         }
     }
     
+    class ThirdPartyHttpException(val status: Int, val responseBody: String) : Exception("HTTP $status from third party")
+
     override suspend fun verifyPerson(
         verificationRequest: VerificationRequest, 
         accessToken: String
@@ -145,25 +151,71 @@ class ThirdPartyApiServiceImpl(
         logger.info { "=== THIRD PARTY API: VERIFY PERSON REQUEST ===" }
         logger.info { "URL: $verificationUrl" }
         logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
-        logger.info { "Request Body:\n$verificationRequest" }
+
+        // Build pruned JSON (omit blanks/nulls) for logging and request
+        val permanentAddressJson = buildJsonObject {
+            verificationRequest.verify.permanentAddress.division.takeIf { it.isNotBlank() }?.let { put("division", it) }
+            verificationRequest.verify.permanentAddress.district.takeIf { it.isNotBlank() }?.let { put("district", it) }
+            verificationRequest.verify.permanentAddress.upozila.takeIf { it.isNotBlank() }?.let { put("upozila", it) }
+        }
+        val presentAddressJson = buildJsonObject {
+            verificationRequest.verify.presentAddress.division.takeIf { it.isNotBlank() }?.let { put("division", it) }
+            verificationRequest.verify.presentAddress.district.takeIf { it.isNotBlank() }?.let { put("district", it) }
+            verificationRequest.verify.presentAddress.upozila.takeIf { it.isNotBlank() }?.let { put("upozila", it) }
+        }
+
+        val prunedJson = buildJsonObject {
+            putJsonObject("identify") {
+                verificationRequest.identify.nid10Digit?.takeIf { it.isNotBlank() }?.let { put("nid10Digit", it) }
+                verificationRequest.identify.nid17Digit?.takeIf { it.isNotBlank() }?.let { put("nid17Digit", it) }
+            }
+            putJsonObject("verify") {
+                verificationRequest.verify.nameEn.takeIf { it.isNotBlank() }?.let { put("nameEn", it) }
+                verificationRequest.verify.name.takeIf { it.isNotBlank() }?.let { put("name", it) }
+                verificationRequest.verify.dateOfBirth.takeIf { it.isNotBlank() }?.let { put("dateOfBirth", it) }
+                verificationRequest.verify.father.takeIf { it.isNotBlank() }?.let { put("father", it) }
+                verificationRequest.verify.mother.takeIf { it.isNotBlank() }?.let { put("mother", it) }
+                verificationRequest.verify.spouse.takeIf { it.isNotBlank() }?.let { put("spouse", it) }
+                if (permanentAddressJson.isNotEmpty()) {
+                    put("permanentAddress", permanentAddressJson)
+                }
+                if (presentAddressJson.isNotEmpty()) {
+                    put("presentAddress", presentAddressJson)
+                }
+            }
+        }
+
+        logger.info { "Request Body (pruned):\n${jsonPrinter.encodeToString(prunedJson)}" }
         
-        apiLogger.logRequest("VERIFY_PERSON", verificationUrl, verificationRequest, accessToken)
+        apiLogger.logRequest("VERIFY_PERSON", verificationUrl, prunedJson, accessToken)
         
         try {
-            val response: VerificationResponse = client.post("$verificationUrl") {
+            val httpResponse: HttpResponse = client.post("$verificationUrl") {
                 contentType(ContentType.Application.Json)
                 header("Authorization", "Bearer $accessToken")
-                setBody(verificationRequest)
-            }.body()
-            
+                setBody(prunedJson)
+            }
+
+            val rawBody: String = httpResponse.bodyAsText()
+
             val duration = System.currentTimeMillis() - startTime
-            
+
             logger.info { "=== THIRD PARTY API: VERIFY PERSON RESPONSE ===" }
-            logger.info { "Response Body:\n$response" }
-            
-            apiLogger.logResponse("VERIFY_PERSON", response, duration)
-            
-            return response
+            logger.info { "Status: ${httpResponse.status.value}" }
+            logger.info { "Raw Body (exact):\n$rawBody" }
+
+            if (httpResponse.status.isSuccess()) {
+                val parsed: VerificationResponse = Json { ignoreUnknownKeys = true }.decodeFromString(VerificationResponse.serializer(), rawBody)
+                logger.info { "Parsed Body:\n${jsonPrinter.encodeToString(parsed)}" }
+                apiLogger.logResponse("VERIFY_PERSON", parsed, duration)
+                return parsed
+            } else {
+                apiLogger.logError("VERIFY_PERSON", Exception("HTTP ${httpResponse.status.value}"), duration)
+                throw ThirdPartyHttpException(httpResponse.status.value, rawBody)
+            }
+        } catch (e: ThirdPartyHttpException) {
+            // Already logged raw body above; rethrow to be handled by caller
+            throw e
         } catch (e: Exception) {
             val duration = System.currentTimeMillis() - startTime
             apiLogger.logError("VERIFY_PERSON", e, duration)
@@ -199,7 +251,7 @@ class ThirdPartyApiServiceImpl(
         logger.info { "=== THIRD PARTY API: CHANGE PASSWORD REQUEST ===" }
         logger.info { "URL: $authUrl" }
         logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
-        logger.info { "Request Body:\n$changePasswordRequest" }
+        logger.info { "Request Body:\n${jsonPrinter.encodeToString(changePasswordRequest)}" }
         
         apiLogger.logRequest("CHANGE_PASSWORD", "$authUrl", changePasswordRequest, accessToken)
         
@@ -253,7 +305,7 @@ class ThirdPartyApiServiceImpl(
         logger.info { "=== THIRD PARTY API: GET BILLING REPORT REQUEST ===" }
         logger.info { "URL: $billingUrl" }
         logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
-        logger.info { "Request Body:\n$billingRequest" }
+        logger.info { "Request Body:\n${jsonPrinter.encodeToString(billingRequest)}" }
         
         apiLogger.logRequest("GET_BILLING_REPORT", "$billingUrl", billingRequest, accessToken)
         
@@ -267,7 +319,7 @@ class ThirdPartyApiServiceImpl(
             val duration = System.currentTimeMillis() - startTime
             
             logger.info { "=== THIRD PARTY API: GET BILLING REPORT RESPONSE ===" }
-            logger.info { "Response Body:\n$response" }
+            logger.info { "Response Body:\n${jsonPrinter.encodeToString(response)}" }
             
             apiLogger.logResponse("GET_BILLING_REPORT", response, duration)
             
@@ -307,7 +359,7 @@ class ThirdPartyApiServiceImpl(
         logger.info { "=== THIRD PARTY API: AFIS VERIFICATION REQUEST ===" }
         logger.info { "URL: $afisVerificationUrl" }
         logger.info { "Authorization: Bearer ${accessToken.take(10)}..." }
-        logger.info { "Request Body:\n$afisRequest" }
+        logger.info { "Request Body:\n${jsonPrinter.encodeToString(afisRequest)}" }
         
         apiLogger.logRequest("AFIS_VERIFICATION", afisVerificationUrl, afisRequest, accessToken)
         
@@ -321,7 +373,7 @@ class ThirdPartyApiServiceImpl(
             val duration = System.currentTimeMillis() - startTime
             
             logger.info { "=== THIRD PARTY API: AFIS VERIFICATION RESPONSE ===" }
-            logger.info { "Response Body:\n$response" }
+            logger.info { "Response Body:\n${jsonPrinter.encodeToString(response)}" }
             
             apiLogger.logResponse("AFIS_VERIFICATION", response, duration)
             
@@ -434,7 +486,7 @@ class ThirdPartyApiServiceImpl(
             val duration = System.currentTimeMillis() - startTime
             
             logger.info { "=== THIRD PARTY API: AFIS RESULT CHECK RESPONSE ===" }
-            logger.info { "Response Body:\n$response" }
+            logger.info { "Response Body:\n${jsonPrinter.encodeToString(response)}" }
             
             apiLogger.logResponse("AFIS_RESULT_CHECK", response, duration)
             

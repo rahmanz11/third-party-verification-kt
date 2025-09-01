@@ -1,7 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     const username = document.body.getAttribute('data-username');
+    console.log('Extracted username:', username);
+    
+    if (!username) {
+        console.error('Username not found in body data-username attribute');
+        return;
+    }
     
     initializeGeographicDropdowns();
+    initializeJsonPanel();
     
     document.getElementById('nidType').addEventListener('change', function() {
         const nidValue = document.getElementById('nidValue');
@@ -17,23 +24,221 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     document.getElementById('verificationForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
         if (!validateForm()) {
-            e.preventDefault();
             return;
         }
-                
+        
+        // Show JSON confirmation modal before submitting
+        showJsonConfirmationModal();
+    });
+    
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        resetForm();
+    });
+    
+    function initializeJsonPanel() {
+        const jsonToggle = document.getElementById('jsonToggle');
+        const jsonPanel = document.getElementById('jsonPanel');
+        const mainContent = document.getElementById('mainContent');
+        
+        jsonToggle.addEventListener('click', function() {
+            jsonPanel.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            
+            const icon = this.querySelector('i');
+            if (jsonPanel.classList.contains('collapsed')) {
+                icon.className = 'fas fa-chevron-left';
+            } else {
+                icon.className = 'fas fa-code';
+            }
+        });
+    }
+    
+    function submitFormViaAjax() {
+        const form = document.getElementById('verificationForm');
+        const formData = new FormData(form);
         const submitBtn = document.getElementById('submitBtn');
+        
+        // Show loading state
         submitBtn.querySelector('.loading').style.display = 'inline-block';
         submitBtn.querySelector('.normal').style.display = 'none';
         submitBtn.disabled = true;
-    });
+        
+        // Build request object for display
+        const requestData = buildRequestObject(formData);
+        displayRequestJson(requestData);
+        
+
+        
+        // Submit form via AJAX
+        fetch('/verify', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (response.redirected) {
+                // Handle redirect (e.g., to third-party login)
+                window.location.href = response.url;
+                return;
+            }
+            
+            return response.text();
+        })
+        .then(data => {
+            if (data) {
+                try {
+                    // Try to parse as JSON
+                    const jsonData = JSON.parse(data);
+                    displayResponseJson(jsonData);
+                    
+                    // If it's a verification result, redirect to result page
+                    if (jsonData.verificationResponse) {
+                        window.location.href = `/verification-result?username=${username}&thirdPartyUsername=${formData.get('thirdPartyUsername')}`;
+                    }
+                } catch (e) {
+                    // If not JSON, it might be HTML (success case)
+                    displayResponseJson({ message: 'Response received (HTML content)', rawData: data.substring(0, 200) + '...' });
+                    
+                    // Redirect to result page
+                    setTimeout(() => {
+                        window.location.href = `/verification-result?username=${username}&thirdPartyUsername=${formData.get('thirdPartyUsername')}`;
+                    }, 1000);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            displayResponseJson({ error: error.message, type: 'NetworkError' });
+        })
+        .finally(() => {
+            // Reset button state
+            submitBtn.querySelector('.loading').style.display = 'none';
+            submitBtn.querySelector('.normal').style.display = 'inline-block';
+            submitBtn.disabled = false;
+        });
+    }
+    
+    function buildRequestObject(formData) {
+        const request = {
+            identify: {
+                nid10Digit: formData.get('nidType') === '10digit' ? formData.get('nidValue') : null,
+                nid17Digit: formData.get('nidType') === '17digit' ? formData.get('nidValue') : null
+            },
+            verify: {
+                nameEn: formData.get('nameEn') || '',
+                name: formData.get('name') || '',
+                dateOfBirth: formData.get('dateOfBirth') || '',
+                father: formData.get('father') || '',
+                mother: formData.get('mother') || '',
+                spouse: formData.get('spouse') || '',
+                permanentAddress: {
+                    division: getSelectedText('permanentDivision') || '',
+                    district: getSelectedText('permanentDistrict') || '',
+                    upozila: getSelectedText('permanentUpazila') || ''
+                },
+                presentAddress: {
+                    division: getSelectedText('presentDivision') || '',
+                    district: getSelectedText('presentDistrict') || '',
+                    upozila: getSelectedText('presentUpazila') || ''
+                }
+            }
+        };
+        
+        // Remove empty fields for cleaner display
+        return cleanObject(request);
+    }
+    
+    function getSelectedText(selectId) {
+        const select = document.getElementById(selectId);
+        if (!select || !select.value) {
+            return '';
+        }
+        
+        const selectedOption = select.options[select.selectedIndex];
+        return selectedOption ? selectedOption.text : '';
+    }
+    
+    function cleanObject(obj) {
+        const cleaned = {};
+        for (const [key, value] of Object.entries(obj)) {
+            if (value !== null && value !== undefined && value !== '') {
+                if (typeof value === 'object' && !Array.isArray(value)) {
+                    const cleanedNested = cleanObject(value);
+                    if (Object.keys(cleanedNested).length > 0) {
+                        cleaned[key] = cleanedNested;
+                    }
+                } else {
+                    cleaned[key] = value;
+                }
+            }
+        }
+        return cleaned;
+    }
+    
+    function displayRequestJson(data) {
+        const requestJson = document.getElementById('requestJson');
+        requestJson.textContent = JSON.stringify(data, null, 2);
+        requestJson.classList.remove('empty');
+    }
+    
+    function displayResponseJson(data) {
+        const responseJson = document.getElementById('responseJson');
+        responseJson.textContent = JSON.stringify(data, null, 2);
+        responseJson.classList.remove('empty');
+    }
+    
+
+    
+
+    
+    function resetForm() {
+        // Reset form fields
+        document.getElementById('verificationForm').reset();
+        
+        // Reset geographic dropdowns
+        const geographicSelects = [
+            'permanentDivision', 'permanentDistrict', 'permanentUpazila',
+            'presentDivision', 'presentDistrict', 'presentUpazila'
+        ];
+        
+        geographicSelects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (select) {
+                select.innerHTML = '<option value="">নির্বাচন করুন</option>';
+                select.disabled = selectId.includes('Division') ? false : true;
+            }
+        });
+        
+        // Clear JSON panels
+        clearJsonPanels();
+        
+
+    }
+    
+    function clearJsonPanels() {
+        const requestJson = document.getElementById('requestJson');
+        const responseJson = document.getElementById('responseJson');
+        
+        requestJson.textContent = 'No request data yet';
+        requestJson.classList.add('empty');
+        
+        responseJson.textContent = 'No response data yet';
+        responseJson.classList.add('empty');
+    }
     
     function initializeGeographicDropdowns() {        
+        console.log('Initializing geographic dropdowns...');
         loadDivisions('permanentDivision');
         loadDivisions('presentDivision');
         
         setupCascadingDropdowns('permanent');
         setupCascadingDropdowns('present');
+        console.log('Geographic dropdowns initialized');
     }
     
     function cleanupSearchableSelect(selectId) {
@@ -98,96 +303,114 @@ document.addEventListener('DOMContentLoaded', function() {
             user-select: none;
             position: relative;
             width: 100%;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #212529;
         `;
-        displayDiv.innerHTML = '<span class="selected-text">' + placeholder + '</span><i class="fas fa-chevron-down position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%);"></i>';
+        displayDiv.textContent = placeholder;
         
-        const searchInput = document.createElement('input');
-        searchInput.type = 'text';
-        searchInput.className = 'form-control searchable-input';
-        searchInput.placeholder = placeholder;
-        searchInput.style.display = 'none';
-        
-        const dropdownList = document.createElement('div');
-        dropdownList.className = 'searchable-dropdown-list';
-        dropdownList.style.cssText = `
+        const dropdown = document.createElement('div');
+        dropdown.className = 'searchable-dropdown';
+        dropdown.style.cssText = `
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
-            max-height: 200px;
-            overflow-y: auto;
             background: white;
             border: 1px solid #ced4da;
             border-top: none;
             border-radius: 0 0 0.375rem 0.375rem;
+            max-height: 200px;
+            overflow-y: auto;
             z-index: 1000;
             display: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         `;
         
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'form-control';
+        searchInput.placeholder = 'Search...';
+        searchInput.style.cssText = `
+            border: none;
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 0;
+            margin: 0;
+        `;
+        
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'searchable-options';
+        
+        // Create hidden input to store the actual value
         const hiddenInput = document.createElement('input');
         hiddenInput.type = 'hidden';
+        hiddenInput.id = selectId;
         hiddenInput.name = originalSelect.name;
-        hiddenInput.id = originalSelect.id;
+        hiddenInput.value = originalSelect.value;
         
-        wrapper.appendChild(displayDiv);
-        wrapper.appendChild(searchInput);
-        wrapper.appendChild(dropdownList);
-        wrapper.appendChild(hiddenInput);
+        // Populate options
+        populateSearchableOptions(originalSelect, optionsContainer, displayDiv, hiddenInput);
         
-        container.replaceChild(wrapper, originalSelect);
-        
-        wrapper.originalSelect = originalSelect;
-        
+        // Add event listeners
         displayDiv.addEventListener('click', function() {
-            if (originalSelect.disabled) return;
-            searchInput.style.display = 'block';
-            displayDiv.style.display = 'none';
-            searchInput.focus();
-            showDropdown();
-        });
-        
-        searchInput.addEventListener('input', function() {
-            filterOptions(this.value);
-        });
-        
-        searchInput.addEventListener('blur', function() {
-            setTimeout(() => {
-                searchInput.style.display = 'none';
-                displayDiv.style.display = 'block';
-                dropdownList.style.display = 'none';
-            }, 200);
-        });
-        
-        searchInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const firstOption = dropdownList.querySelector('.dropdown-option:not(.hidden)');
-                if (firstOption) {
-                    selectOption(firstOption);
-                }
+            const isVisible = dropdown.style.display === 'block';
+            dropdown.style.display = isVisible ? 'none' : 'block';
+            
+            if (!isVisible) {
+                searchInput.focus();
             }
         });
         
-        function showDropdown() {
-            const options = Array.from(originalSelect.options).slice(1); // Skip first empty option
-            dropdownList.innerHTML = '';
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const options = optionsContainer.querySelectorAll('.searchable-option');
             
             options.forEach(option => {
+                const text = option.textContent.toLowerCase();
+                option.style.display = text.includes(searchTerm) ? 'block' : 'none';
+            });
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!wrapper.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+        
+        // Assemble the wrapper
+        dropdown.appendChild(searchInput);
+        dropdown.appendChild(optionsContainer);
+        wrapper.appendChild(displayDiv);
+        wrapper.appendChild(dropdown);
+        wrapper.appendChild(hiddenInput);
+        
+        // Replace original select
+        originalSelect.style.display = 'none';
+        container.appendChild(wrapper);
+        
+        // Store reference for cleanup
+        wrapper.originalSelect = originalSelect;
+        
+        return wrapper;
+    }
+    
+    function populateSearchableOptions(originalSelect, container, displayDiv, hiddenInput) {
+        container.innerHTML = '';
+        
+        Array.from(originalSelect.options).forEach(option => {
+            if (option.value) {
                 const optionDiv = document.createElement('div');
-                optionDiv.className = 'dropdown-option';
-                optionDiv.style.cssText = `
-                    padding: 8px 12px;
-                    cursor: pointer;
-                    border-bottom: 1px solid #f0f0f0;
-                `;
+                optionDiv.className = 'searchable-option';
                 optionDiv.textContent = option.textContent;
-                optionDiv.setAttribute('data-value', option.value);
-                optionDiv.setAttribute('data-id', option.getAttribute('data-id'));
-                
-                optionDiv.addEventListener('click', function() {
-                    selectOption(this);
-                });
+                optionDiv.style.cssText = `
+                    padding: 0.5rem 0.75rem;
+                    cursor: pointer;
+                    border-bottom: 1px solid #f8f9fa;
+                `;
                 
                 optionDiv.addEventListener('mouseenter', function() {
                     this.style.backgroundColor = '#f8f9fa';
@@ -197,111 +420,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.style.backgroundColor = 'white';
                 });
                 
-                dropdownList.appendChild(optionDiv);
-            });
-            
-            dropdownList.style.display = 'block';
-        }
-        
-        function filterOptions(searchTerm) {
-            const options = dropdownList.querySelectorAll('.dropdown-option');
-            const term = searchTerm.toLowerCase();
-            
-            options.forEach(option => {
-                const text = option.textContent.toLowerCase();
-                if (text.includes(term)) {
-                    option.classList.remove('hidden');
-                    option.style.display = 'block';
-                } else {
-                    option.classList.add('hidden');
-                    option.style.display = 'none';
-                }
-            });
-        }
-        
-        function selectOption(optionElement) {
-            const value = optionElement.getAttribute('data-value');
-            const text = optionElement.textContent;
-            const id = optionElement.getAttribute('data-id');
-            
-            hiddenInput.value = value;
-            hiddenInput.setAttribute('data-id', id);
-            displayDiv.querySelector('.selected-text').textContent = text;
-            displayDiv.setAttribute('data-id', id);
-            
-            searchInput.style.display = 'none';
-            displayDiv.style.display = 'block';
-            dropdownList.style.display = 'none';
-            searchInput.value = '';
-            
-            const event = new Event('change', { bubbles: true });
-            hiddenInput.dispatchEvent(event);
-        }
-        
-        function updateDisabledState() {
-            if (originalSelect.disabled) {
-                displayDiv.classList.add('disabled');
-                displayDiv.style.cursor = 'not-allowed';
-            } else {
-                displayDiv.classList.remove('disabled');
-                displayDiv.style.cursor = 'pointer';
+                optionDiv.addEventListener('click', function() {
+                    displayDiv.textContent = option.textContent;
+                    hiddenInput.value = option.value;
+                    hiddenInput.setAttribute('data-id', option.value);
+                    container.parentElement.style.display = 'none';
+                    
+                    // Trigger change event
+                    const event = new Event('change', { bubbles: true });
+                    hiddenInput.dispatchEvent(event);
+                });
+                
+                container.appendChild(optionDiv);
             }
-        }
-        
-        updateDisabledState();
-        
-        const observer = new MutationObserver(updateDisabledState);
-        observer.observe(originalSelect, { attributes: true, attributeFilter: ['disabled'] });
-        
-        return {
-            getValue: () => hiddenInput.value,
-            getSelectedId: () => displayDiv.getAttribute('data-id'),
-            setValue: (value, text, id) => {
-                hiddenInput.value = value;
-                displayDiv.querySelector('.selected-text').textContent = text;
-                displayDiv.setAttribute('data-id', id);
-            },
-            reset: () => {
-                hiddenInput.value = '';
-                hiddenInput.removeAttribute('data-id');
-                displayDiv.querySelector('.selected-text').textContent = placeholder;
-                displayDiv.removeAttribute('data-id');
-            },
-            setDisabled: (disabled) => {
-                originalSelect.disabled = disabled;
-                updateDisabledState();
-            }
-        };
+        });
     }
     
     function loadDivisions(selectId) {
         const select = document.getElementById(selectId);
-                
-        if (!select) {
-            return;
-        }
+        if (!select) return;
+        
+        console.log('Loading divisions for:', selectId, 'Username:', username);
         
         fetch(`/api/geo/divisions?username=${encodeURIComponent(username)}`)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
+                console.log('Divisions response status:', response.status);
                 return response.json();
             })
             .then(data => {
+                console.log('Divisions data:', data);
                 if (data.success && data.data) {
                     select.innerHTML = '<option value="">বিভাগ নির্বাচন করুন</option>';
-                    
                     data.data.forEach(division => {
                         const option = document.createElement('option');
-                        option.value = division.bn_name;
-                        option.textContent = division.bn_name;
-                        option.setAttribute('data-id', division.id);
+                        option.value = division.id;
+                        option.textContent = division.bn_name || division.name;
                         select.appendChild(option);
                     });
-                    
+                    select.disabled = false;
+                    console.log('Loaded', data.data.length, 'divisions');
                 } else {
-                    console.error('Failed to load divisions:', data.error);
+                    console.error('Divisions data not in expected format:', data);
                 }
             })
             .catch(error => {
@@ -309,10 +468,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    function loadDistricts(divisionId, districtSelectId) {
-        const select = document.getElementById(districtSelectId);
-        
-        cleanupSearchableSelect(districtSelectId);
+    function loadDistricts(divisionId, selectId) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
         
         select.innerHTML = '<option value="">জেলা নির্বাচন করুন</option>';
         select.disabled = true;
@@ -320,30 +478,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!divisionId) return;
         
         fetch(`/api/geo/districts?username=${encodeURIComponent(username)}&divisionId=${encodeURIComponent(divisionId)}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success && data.data) {
-                    select.innerHTML = '<option value="">জেলা নির্বাচন করুন</option>';
-                    
                     data.data.forEach(district => {
                         const option = document.createElement('option');
-                        option.value = district.bn_name;
-                        option.textContent = district.bn_name;
-                        option.setAttribute('data-id', district.id);
+                        option.value = district.id;
+                        option.textContent = district.bn_name || district.name;
                         select.appendChild(option);
                     });
-                    
                     select.disabled = false;
-                    
-                    const searchableSelect = createSearchableSelect(districtSelectId, 'জেলা নির্বাচন করুন');
-                    select.searchableSelect = searchableSelect;
-                } else {
-                    console.error('Failed to load districts:', data.error);
                 }
             })
             .catch(error => {
@@ -351,10 +495,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    function loadUpazilas(districtId, upazilaSelectId) {
-        const select = document.getElementById(upazilaSelectId);
-        
-        cleanupSearchableSelect(upazilaSelectId);
+    function loadUpazilas(districtId, selectId) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
         
         select.innerHTML = '<option value="">উপজেলা নির্বাচন করুন</option>';
         select.disabled = true;
@@ -362,30 +505,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!districtId) return;
         
         fetch(`/api/geo/upazilas?username=${encodeURIComponent(username)}&districtId=${encodeURIComponent(districtId)}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success && data.data) {
-                    select.innerHTML = '<option value="">উপজেলা নির্বাচন করুন</option>';
-                    
                     data.data.forEach(upazila => {
                         const option = document.createElement('option');
-                        option.value = upazila.bn_name;
-                        option.textContent = upazila.bn_name;
-                        option.setAttribute('data-id', upazila.id);
+                        option.value = upazila.id;
+                        option.textContent = upazila.bn_name || upazila.name;
                         select.appendChild(option);
                     });
-                    
                     select.disabled = false;
-                    
-                    const searchableSelect = createSearchableSelect(upazilaSelectId, 'উপজেলা নির্বাচন করুন');
-                    select.searchableSelect = searchableSelect;
-                } else {
-                    console.error('Failed to load upazilas:', data.error);
                 }
             })
             .catch(error => {
@@ -393,27 +522,26 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    function setupCascadingDropdowns(prefix) {        
+    function setupCascadingDropdowns(prefix) {
         const divisionSelect = document.getElementById(`${prefix}Division`);
         const districtSelect = document.getElementById(`${prefix}District`);
         const upazilaSelect = document.getElementById(`${prefix}Upazila`);
         
         if (divisionSelect) {
             divisionSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const divisionId = selectedOption.getAttribute('data-id');
+                const divisionId = this.value;
                 
                 if (districtSelect) {
                     districtSelect.innerHTML = '<option value="">জেলা নির্বাচন করুন</option>';
                     districtSelect.disabled = true;
                 }
+                
                 if (upazilaSelect) {
                     upazilaSelect.innerHTML = '<option value="">উপজেলা নির্বাচন করুন</option>';
                     upazilaSelect.disabled = true;
                 }
                 
                 cleanupSearchableSelect(`${prefix}District`);
-                cleanupSearchableSelect(`${prefix}Upazila`);
                 
                 if (divisionId) {
                     loadDistricts(divisionId, `${prefix}District`);
@@ -421,11 +549,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Add event listener for district change
         if (districtSelect) {
             districtSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const districtId = selectedOption.getAttribute('data-id');
+                const districtId = this.value;
                 
                 if (upazilaSelect) {
                     upazilaSelect.innerHTML = '<option value="">উপজেলা নির্বাচন করুন</option>';
@@ -458,6 +584,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+    }
+    
+    function showJsonConfirmationModal() {
+        // Build the request object for display
+        const form = document.getElementById('verificationForm');
+        const formData = new FormData(form);
+        const requestData = buildRequestObject(formData);
+        
+        // Display the JSON in the modal
+        const jsonPreview = document.getElementById('jsonPreview');
+        jsonPreview.textContent = JSON.stringify(requestData, null, 2);
+        
+        // Also update the API debug panel request JSON
+        displayRequestJson(requestData);
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('jsonConfirmationModal'));
+        modal.show();
     }
     
     function validateForm() {
@@ -522,6 +666,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.querySelector('.normal').style.display = 'inline-block';
                 this.disabled = false;
             });
+        });
+    }
+    
+    // Add event listener for the JSON confirmation modal submit button
+    const confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+    if (confirmSubmitBtn) {
+        confirmSubmitBtn.addEventListener('click', function() {
+            // Hide the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('jsonConfirmationModal'));
+            modal.hide();
+            
+            // Submit the form via AJAX
+            submitFormViaAjax();
         });
     }
 });

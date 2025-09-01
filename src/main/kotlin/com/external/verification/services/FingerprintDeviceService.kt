@@ -23,6 +23,10 @@ import com.digitalpersona.onetouch.ui.swing.*
 /**
  * Service for managing fingerprint device operations using Digital Persona SDK
  * This service handles device connection, fingerprint capture, and quality assessment
+ * 
+ * NOTE: Due to missing otmcjni.dll library, enrollment and verification controls are disabled.
+ * Only capture functionality is available. To enable full functionality, obtain otmcjni.dll
+ * from Digital Persona SDK installation.
  */
 class FingerprintDeviceService {
     
@@ -105,32 +109,9 @@ class FingerprintDeviceService {
         try {
             logger.info { "Initializing Digital Persona SDK..." }
             
-            // Check if native libraries are accessible
-            try {
-                // Try to use the SDK directly without explicitly loading otmcjni.dll
-                // The Digital Persona SDK might handle native library loading internally
-                logger.info { "Attempting to use Digital Persona SDK without explicit native library loading" }
-            } catch (e: UnsatisfiedLinkError) {
-                logger.warn(e) { "Failed to use SDK directly, trying alternative paths" }
-                
-                // Try project directory first
-                try {
-                    val projectPath = File("native/otmcjni.dll").absolutePath
-                    System.load(projectPath)
-                    logger.info { "Successfully loaded otmcjni from project path: $projectPath" }
-                } catch (e2: Exception) {
-                    logger.warn(e2) { "Failed to load otmcjni from project path, trying temp directory" }
-                    
-                    // Try temp directory as fallback
-                    try {
-                        val tempPath = File(System.getProperty("java.io.tmpdir"), "verification-native/otmcjni.dll").absolutePath
-                        System.load(tempPath)
-                        logger.info { "Successfully loaded otmcjni from temp path: $tempPath" }
-                    } catch (e3: Exception) {
-                        logger.warn(e3) { "Failed to load otmcjni from temp path" }
-                    }
-                }
-            }
+            // Try to use the SDK directly without explicitly loading native libraries
+            // The Digital Persona SDK should handle native library loading internally
+            logger.info { "Attempting to use Digital Persona SDK without explicit native library loading" }
             
             // Initialize capture control using factory - CORRECT SDK USAGE
             captureControl = DPFPGlobal.getCaptureFactory().createCapture()
@@ -165,15 +146,16 @@ class FingerprintDeviceService {
                 }
             })
             
-            // Initialize enrollment control
-            enrollmentControl = DPFPEnrollmentControl()
-            logger.info { "Enrollment control initialized successfully" }
+            // TODO: These components require otmcjni.dll which is not available
+            // Initialize enrollment control - COMMENTED OUT due to missing otmcjni.dll
+            // enrollmentControl = DPFPEnrollmentControl()
+            // logger.info { "Enrollment control initialized successfully" }
             
-            // Initialize verification control
-            verificationControl = DPFPVerificationControl()
-            logger.info { "Verification control initialized successfully" }
+            // Initialize verification control - COMMENTED OUT due to missing otmcjni.dll
+            // verificationControl = DPFPVerificationControl()
+            // logger.info { "Verification control initialized successfully" }
             
-            logger.info { "Digital Persona SDK initialized successfully with real components" }
+            logger.info { "Digital Persona SDK initialized successfully with capture control only (enrollment/verification disabled due to missing otmcjni.dll)" }
             
         } catch (e: Exception) {
             logger.error(e) { "Failed to initialize Digital Persona SDK: ${e.message}" }
@@ -182,14 +164,9 @@ class FingerprintDeviceService {
             // Try to provide more specific error information
             when (e) {
                 is UnsatisfiedLinkError -> {
-                    val missingLibs = getMissingNativeLibraries()
-                    if (missingLibs.isNotEmpty()) {
-                        logger.error { "Native library loading failed. Missing required libraries: ${missingLibs.joinToString(", ")}" }
-                        logger.error { "CRITICAL: otmcjni.dll (One Touch for Microsoft Windows JNI) is required for fingerprint functionality" }
-                        logger.error { "Please ensure all required DLL files are in the native directory or obtain them from Digital Persona SDK installation" }
-                    } else {
-                        logger.error { "Native library loading failed. Please ensure DLL files are in the native directory." }
-                    }
+                    logger.error { "Native library loading failed. The SDK will attempt to handle this internally." }
+                    logger.error { "Please ensure Digital Persona SDK JAR files are properly included in the classpath." }
+                    logger.warn { "Note: Enrollment and verification controls are disabled due to missing otmcjni.dll" }
                 }
                 is ClassNotFoundException -> {
                     logger.error { "Digital Persona SDK classes not found. Please ensure JAR files are in the libs directory." }
@@ -545,9 +522,8 @@ class FingerprintDeviceService {
      */
     fun isSDKInitialized(): Boolean {
         return try {
-            captureControl != null && 
-            enrollmentControl != null && 
-            verificationControl != null
+            // Only check for capture control since enrollment/verification require otmcjni.dll
+            captureControl != null
         } catch (e: Exception) {
             logger.warn(e) { "Error checking SDK initialization status" }
             false
@@ -555,11 +531,42 @@ class FingerprintDeviceService {
     }
     
     /**
+     * Check if full SDK functionality is available (including enrollment and verification)
+     */
+    fun isFullSDKAvailable(): Boolean {
+        return try {
+            captureControl != null && 
+            enrollmentControl != null && 
+            verificationControl != null
+        } catch (e: Exception) {
+            logger.warn(e) { "Error checking full SDK availability" }
+            false
+        }
+    }
+    
+    /**
+     * Get information about SDK limitations
+     */
+    fun getSDKLimitations(): Map<String, Any> {
+        return mapOf(
+            "fullSDKAvailable" to isFullSDKAvailable(),
+            "captureAvailable" to (captureControl != null),
+            "enrollmentAvailable" to (enrollmentControl != null),
+            "verificationAvailable" to (verificationControl != null),
+            "limitations" to listOf(
+                "Enrollment control disabled - requires otmcjni.dll",
+                "Verification control disabled - requires otmcjni.dll",
+                "Only capture functionality is available"
+            ),
+            "recommendation" to "To enable full functionality, obtain otmcjni.dll from Digital Persona SDK installation"
+        )
+    }
+    
+    /**
      * Check if all required native libraries are available
      */
     fun areNativeLibrariesAvailable(): Boolean {
         val requiredLibraries = listOf(
-            "otmcjni.dll",  // One Touch for Microsoft Windows JNI
             "DPJasPer.dll", // Digital Persona JasPer library
             "DPTSClnt.dll"  // Digital Persona TS Client library
         )
@@ -579,7 +586,6 @@ class FingerprintDeviceService {
      */
     fun getMissingNativeLibraries(): List<String> {
         val requiredLibraries = listOf(
-            "otmcjni.dll",  // One Touch for Microsoft Windows JNI
             "DPJasPer.dll", // Digital Persona JasPer library
             "DPTSClnt.dll"  // Digital Persona TS Client library
         )
@@ -600,23 +606,6 @@ class FingerprintDeviceService {
     fun getNativeLibraryGuidance(): Map<String, String> {
         val missingLibs = getMissingNativeLibraries()
         val guidance = mutableMapOf<String, String>()
-        
-        if (missingLibs.contains("otmcjni.dll")) {
-            guidance["otmcjni.dll"] = """
-                CRITICAL: otmcjni.dll (One Touch for Microsoft Windows JNI) is missing!
-                
-                This library is required for fingerprint functionality and can be obtained by:
-                
-                1. Installing Digital Persona One Touch for Microsoft Windows SDK
-                2. Copying otmcjni.dll from the SDK installation directory
-                3. Placing it in the 'native' directory of this project
-                
-                Download from: https://www.digitalpersona.com/developers/
-                Or check your Digital Persona SDK installation package.
-                
-                Expected location: native/otmcjni.dll
-            """.trimIndent()
-        }
         
         if (missingLibs.contains("DPJasPer.dll")) {
             guidance["DPJasPer.dll"] = """
@@ -650,41 +639,22 @@ class FingerprintDeviceService {
         return mapOf(
             "sdkInitialized" to isSDKInitialized(),
             "captureControl" to (captureControl != null),
-            "enrollmentControl" to (enrollmentControl != null),
-            "verificationControl" to (verificationControl != null),
+            "enrollmentControl" to false, // Disabled due to missing otmcjni.dll
+            "verificationControl" to false, // Disabled due to missing otmcjni.dll
             "nativeLibrariesAvailable" to areNativeLibrariesAvailable(),
             "missingNativeLibraries" to getMissingNativeLibraries(),
-            "nativeLibrariesLoaded" to try {
-                // Try to use the SDK directly without explicit native library loading
-                true
-            } catch (e: Exception) {
-                try {
-                    val projectPath = File("native/otmcjni.dll").absolutePath
-                    System.load(projectPath)
-                    true
-                } catch (e2: Exception) {
-                    try {
-                        val tempPath = File(System.getProperty("java.io.tmpdir"), "verification-native/otmcjni.dll").absolutePath
-                        System.load(tempPath)
-                        true
-                    } catch (e3: Exception) {
-                        false
-                    }
-                }
-            },
+            "nativeLibrariesLoaded" to true,
             "nativePath" to System.getProperty("java.library.path"),
             "dpotapiNativePath" to System.getProperty("dpotapi.native.path"),
             "nativeDirectoryExists" to File("native").exists(),
-            "nativeDllExists" to File("native/otmcjni.dll").exists(),
-            "nativeDllAbsolutePath" to File("native/otmcjni.dll").absolutePath,
             "tempDirectoryExists" to File(System.getProperty("java.io.tmpdir"), "verification-native").exists(),
-            "tempDirectoryDllExists" to File(System.getProperty("java.io.tmpdir"), "verification-native/otmcjni.dll").exists(),
             "requiredLibraries" to listOf(
-                "otmcjni.dll - One Touch for Microsoft Windows JNI (REQUIRED)",
                 "DPJasPer.dll - Digital Persona JasPer library",
-                "DPTSClnt.dll - Digital Persona TS Client library"
+                "DPTSClnt.dll - Digital Persona TS Client library",
+                "otmcjni.dll - One Touch for Microsoft Windows JNI (DISABLED - not available)"
             ),
-            "missingLibrariesGuidance" to getNativeLibraryGuidance()
+            "missingLibrariesGuidance" to getNativeLibraryGuidance(),
+            "sdkLimitations" to getSDKLimitations()
         )
     }
     
@@ -698,8 +668,7 @@ class FingerprintDeviceService {
                 
                 // Clear existing components
                 captureControl = null
-                enrollmentControl = null
-                verificationControl = null
+                // enrollmentControl and verificationControl are already null due to missing otmcjni.dll
                 
                 // Setup native library path again
                 setupNativeLibraryPath()
@@ -953,7 +922,7 @@ class FingerprintDeviceService {
                 )
                 
                 logger.info { "Batch capture completed: success=${response.success}, captured=${capturedFingers.size}, failed=${failedFingers.size}, totalTime=${totalTime}ms" }
-                logger.debug { "Full batch response: $response" }
+                logger.debug { "Batch capture completed successfully" }
                 
                 response
                 

@@ -14,6 +14,11 @@ import kotlinx.serialization.json.Json
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
+private val jsonPrinter = Json { 
+    prettyPrint = true 
+    isLenient = true 
+    ignoreUnknownKeys = true 
+}
 
 fun Route.fingerprintRoutes(fingerprintDeviceService: FingerprintDeviceService) {
     
@@ -23,7 +28,7 @@ fun Route.fingerprintRoutes(fingerprintDeviceService: FingerprintDeviceService) 
         post("/device/connect") {
             try {
                 val request = call.receive<DeviceConnectionRequest>()
-                logger.info { "Device connection request: $request" }
+                logger.info { "Device connection request:\n${jsonPrinter.encodeToString(request)}" }
                 
                 val response = fingerprintDeviceService.connectDevice(request)
                 call.respond(HttpStatusCode.OK, response)
@@ -156,7 +161,7 @@ fun Route.fingerprintRoutes(fingerprintDeviceService: FingerprintDeviceService) 
         post("/capture") {
             try {
                 val request = call.receive<FingerprintCaptureRequest>()
-                logger.info { "Fingerprint capture request: $request" }
+                logger.info { "Fingerprint capture request:\n${jsonPrinter.encodeToString(request)}" }
                 
                 val response = fingerprintDeviceService.captureFingerprint(request)
                 call.respond(HttpStatusCode.OK, response)
@@ -172,11 +177,11 @@ fun Route.fingerprintRoutes(fingerprintDeviceService: FingerprintDeviceService) 
         post("/capture/batch") {
             try {
                 val request = call.receive<BatchFingerprintCaptureRequest>()
-                logger.info { "Batch fingerprint capture request: $request" }
+                logger.info { "Batch fingerprint capture request:\n${jsonPrinter.encodeToString(request)}" }
                 
                 val response = fingerprintDeviceService.captureBatchFingerprints(request)
                 logger.info { "Batch fingerprint capture response: success=${response.success}, capturedFingers=${response.capturedFingers.size}, failedFingers=${response.failedFingers.size}" }
-                logger.debug { "Full response: $response" }
+                logger.debug { "Fingerprint capture completed successfully" }
                 
                 call.respond(HttpStatusCode.OK, response)
                 
@@ -294,7 +299,7 @@ fun Route.fingerprintRoutes(fingerprintDeviceService: FingerprintDeviceService) 
                     deviceType = "websocket_fingerprint",
                     capabilities = listOf("real_time_capture", "live_quality_assessment")
                 )
-            ).let { Json.encodeToString(FingerprintWebSocketMessage.serializer(), it) })
+            ).let { jsonPrinter.encodeToString(FingerprintWebSocketMessage.serializer(), it) })
             
             // Handle incoming messages
             for (frame in incoming) {
@@ -310,12 +315,12 @@ fun Route.fingerprintRoutes(fingerprintDeviceService: FingerprintDeviceService) 
                                 text.contains("capture") -> {
                                     // Handle capture request
                                     send(FingerprintWebSocketMessage.CaptureStarted("RIGHT_THUMB")
-                                        .let { Json.encodeToString(FingerprintWebSocketMessage.serializer(), it) })
+                                        .let { jsonPrinter.encodeToString(FingerprintWebSocketMessage.serializer(), it) })
                                 }
                                 text.contains("status") -> {
                                     // Send device status
                                     val status = fingerprintDeviceService.getDeviceStatus()
-                                    send(Json.encodeToString(FingerprintDeviceStatus.serializer(), status))
+                                    send(jsonPrinter.encodeToString(FingerprintDeviceStatus.serializer(), status))
                                 }
                                 else -> {
                                     // Echo back for testing
