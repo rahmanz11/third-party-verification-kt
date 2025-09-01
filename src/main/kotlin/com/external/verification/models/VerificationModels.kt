@@ -50,19 +50,40 @@ data class VerificationResponse(
         @Serializable
         data class VerificationData(
             val requestId: String,
-            val nationalId: String,
-            val pin: String,
-            val photo: String
+            val nameEn: String? = null,
+            val permanentAddress: PermanentAddress? = null,
+            val photo: String? = null,
+            val voterArea: String? = null,
+            val mobile: String? = null,
+            val noFingerprint: Int? = null,
+            val nidMother: String? = null
+        )
+        
+        @Serializable
+        data class PermanentAddress(
+            val division: String? = null,
+            val district: String? = null,
+            val rmo: String? = null,
+            val upozila: String? = null,
+            val cityCorporationOrMunicipality: String? = null,
+            val unionOrWard: String? = null,
+            val postOffice: String? = null,
+            val postalCode: String? = null,
+            val wardForUnionPorishod: Int? = null,
+            val additionalMouzaOrMoholla: String? = null,
+            val additionalVillageOrRoad: String? = null,
+            val homeOrHoldingNo: String? = null,
+            val region: String? = null
         )
     }
     
     @Serializable
     data class FieldVerificationResult(
-        val nameEn: Boolean,
-        val name: Boolean,
-        val dateOfBirth: Boolean,
-        val father: Boolean,
-        val mother: Boolean
+        val dateOfBirth: Boolean? = null,
+        val nameEn: Boolean? = null,
+        val name: Boolean? = null,
+        val father: Boolean? = null,
+        val mother: Boolean? = null
     )
     
     @Serializable

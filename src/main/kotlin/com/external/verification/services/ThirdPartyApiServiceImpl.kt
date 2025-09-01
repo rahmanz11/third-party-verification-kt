@@ -205,10 +205,18 @@ class ThirdPartyApiServiceImpl(
             logger.info { "Raw Body (exact):\n$rawBody" }
 
             if (httpResponse.status.isSuccess()) {
-                val parsed: VerificationResponse = Json { ignoreUnknownKeys = true }.decodeFromString(VerificationResponse.serializer(), rawBody)
-                logger.info { "Parsed Body:\n${jsonPrinter.encodeToString(parsed)}" }
-                apiLogger.logResponse("VERIFY_PERSON", parsed, duration)
-                return parsed
+                try {
+                    val parsed: VerificationResponse = Json { ignoreUnknownKeys = true }.decodeFromString(VerificationResponse.serializer(), rawBody)
+                    logger.info { "Parsed Body:\n${jsonPrinter.encodeToString(parsed)}" }
+                    apiLogger.logResponse("VERIFY_PERSON", parsed, duration)
+                    return parsed
+                } catch (parseException: Exception) {
+                    logger.error { "=== JSON PARSING ERROR ===" }
+                    logger.error { "Parse Exception: ${parseException.message}" }
+                    logger.error { "Parse Exception Type: ${parseException.javaClass.simpleName}" }
+                    logger.error { "Raw Response Body: $rawBody" }
+                    throw parseException
+                }
             } else {
                 apiLogger.logError("VERIFY_PERSON", Exception("HTTP ${httpResponse.status.value}"), duration)
                 throw ThirdPartyHttpException(httpResponse.status.value, rawBody)

@@ -1,0 +1,36 @@
+{
+    "status": "OK",
+    "statusCode": "SUCCESS",
+    "success": {
+        "data": {
+            "requestId": "74978f55-26e5-48f9-8686-7e92ec86fc22",
+            "nameEn": "Md. Monju Al-Amin (Monir)",
+            "permanentAddress": {
+                "division": "ঢাকা",
+                "district": "ঢাকা",
+                "rmo": "9",
+                "upozila": "আদাবর",
+                "cityCorporationOrMunicipality": "ঢাকা উত্তর সিটি কর্পোরেশন",
+                "unionOrWard": "ওয়ার্ড নং-৩০",
+                "postOffice": "আমতলি",
+                "postalCode": "৮৭১০",
+                "wardForUnionPorishod": 37,
+                "additionalMouzaOrMoholla": "mn",
+                "additionalVillageOrRoad": "j",
+                "homeOrHoldingNo": "২০/এ আতোয়াজান",
+                "region": "ঢাকা"
+            },
+            "photo": "https://prportal.nidw.gov.bd/file-f3/a/7/a/fcf307ce-9608-4e48-8bff-fbf32aac6348/Photo-fcf307ce-9608-4e48-8bff-fbf32aac6348.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=filetigerit%2F20250901%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250901T114430Z&X-Amz-Expires=172800&X-Amz-SignedHeaders=host&X-Amz-Signature=96b439c5afa1d1c1dc90a999771f6ec6ea53c920ef128f833bc5ca2306eea058",
+            "voterArea": "আদাবর",
+            "mobile": "01552392080",
+            "noFingerprint": 1,
+            "nidMother": "33333444444444444"
+        }
+    },
+    "verified": true,
+    "fieldVerificationResult": {
+        "dateOfBirth": true,
+        "nameEn": true
+    },
+    "requestId": "74978f55-26e5-48f9-8686-7e92ec86fc22"
+}

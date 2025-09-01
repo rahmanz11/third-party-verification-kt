@@ -38,6 +38,19 @@ document.addEventListener('DOMContentLoaded', function() {
         resetForm();
     });
     
+    document.getElementById('previewBtn').addEventListener('click', function() {
+        showFormPreviewModal();
+    });
+    
+    document.getElementById('proceedToSubmitBtn').addEventListener('click', function() {
+        document.getElementById('formPreviewModal').classList.remove('show');
+        document.body.classList.remove('modal-open');
+        document.body.style.paddingRight = '';
+        
+        // Show JSON confirmation modal
+        showJsonConfirmationModal();
+    });
+    
     function initializeJsonPanel() {
         const jsonToggle = document.getElementById('jsonToggle');
         const jsonPanel = document.getElementById('jsonPanel');
@@ -680,5 +693,43 @@ document.addEventListener('DOMContentLoaded', function() {
             // Submit the form via AJAX
             submitFormViaAjax();
         });
+    }
+    
+    function showFormPreviewModal() {
+        // Get form values
+        const nidType = document.getElementById('nidType');
+        const nidValue = document.getElementById('nidValue');
+        const nameEn = document.getElementById('nameEn');
+        const name = document.getElementById('name');
+        const dateOfBirth = document.getElementById('dateOfBirth');
+        const father = document.getElementById('father');
+        const mother = document.getElementById('mother');
+        const spouse = document.getElementById('spouse');
+        const permanentDivision = document.getElementById('permanentDivision');
+        const permanentDistrict = document.getElementById('permanentDistrict');
+        const permanentUpazila = document.getElementById('permanentUpazila');
+        const presentDivision = document.getElementById('presentDivision');
+        const presentDistrict = document.getElementById('presentDistrict');
+        const presentUpazila = document.getElementById('presentUpazila');
+        
+        // Update preview modal with form values
+        document.getElementById('previewNidType').textContent = nidType.options[nidType.selectedIndex]?.text || '-';
+        document.getElementById('previewNidValue').textContent = nidValue.value || '-';
+        document.getElementById('previewNameEn').textContent = nameEn.value || '-';
+        document.getElementById('previewName').textContent = name.value || '-';
+        document.getElementById('previewDateOfBirth').textContent = dateOfBirth.value || '-';
+        document.getElementById('previewFather').textContent = father.value || '-';
+        document.getElementById('previewMother').textContent = mother.value || '-';
+        document.getElementById('previewSpouse').textContent = spouse.value || '-';
+        document.getElementById('previewPermanentDivision').textContent = permanentDivision.options[permanentDivision.selectedIndex]?.text || '-';
+        document.getElementById('previewPermanentDistrict').textContent = permanentDistrict.options[permanentDistrict.selectedIndex]?.text || '-';
+        document.getElementById('previewPermanentUpazila').textContent = permanentUpazila.options[permanentUpazila.selectedIndex]?.text || '-';
+        document.getElementById('previewPresentDivision').textContent = presentDivision.options[presentDivision.selectedIndex]?.text || '-';
+        document.getElementById('previewPresentDistrict').textContent = presentDistrict.options[presentDistrict.selectedIndex]?.text || '-';
+        document.getElementById('previewPresentUpazila').textContent = presentUpazila.options[presentUpazila.selectedIndex]?.text || '-';
+        
+        // Show the preview modal
+        const modal = new bootstrap.Modal(document.getElementById('formPreviewModal'));
+        modal.show();
     }
 });

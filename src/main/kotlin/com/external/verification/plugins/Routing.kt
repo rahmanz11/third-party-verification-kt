@@ -46,6 +46,21 @@ fun Application.configureRouting() {
             }
         }
         
+        // Test route to serve verification-response.json
+        get("/verification-response.json") {
+            try {
+                val file = java.io.File("verification-response.json")
+                if (file.exists()) {
+                    val content = file.readText()
+                    call.respondText(content, contentType = io.ktor.http.ContentType.Application.Json)
+                } else {
+                    call.respondText("File not found", status = io.ktor.http.HttpStatusCode.NotFound)
+                }
+            } catch (e: Exception) {
+                call.respondText("Error reading file: ${e.message}", status = io.ktor.http.HttpStatusCode.InternalServerError)
+            }
+        }
+        
         webRoutes(thirdPartyApiService, jwtStorageService, basicAuthSessionService)
         geoRoutes(geoDataService, basicAuthSessionService)
         

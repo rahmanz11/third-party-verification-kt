@@ -315,3 +315,54 @@ body {
         padding: 10px 14px;
     }
 }
+
+/* Preview Modal Styles */
+.preview-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #007bff;
+}
+
+.preview-section h6 {
+    color: #007bff;
+    margin-bottom: 15px;
+}
+
+.info-item {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 15px;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.info-value {
+    color: #212529;
+    font-size: 1rem;
+}
+
+#formPreviewModal .modal-dialog {
+    max-width: 800px;
+}
+
+#formPreviewModal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.preview-section .row {
+    margin-bottom: 15px;
+}
+
+.preview-section .row:last-child {
+    margin-bottom: 0;
+}
