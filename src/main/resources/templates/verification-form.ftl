@@ -205,7 +205,7 @@
                 <span class="navbar-text me-3">
                     <i class="fas fa-user me-2"></i>${username}
                 </span>
-                <a class="btn btn-outline-danger btn-sm" href="/logout?username=${username}&thirdPartyUsername=${thirdPartyUsername!username}">
+                <a class="btn btn-outline-danger btn-sm" href="/logout?username=${username}">
                     <i class="fas fa-sign-out-alt me-2"></i>Logout
                 </a>
             </div>
@@ -256,7 +256,7 @@
 
                         <form id="verificationForm" method="POST" action="/verify">
                             <input type="hidden" name="username" value="${username}">
-                            <input type="hidden" name="thirdPartyUsername" value="${thirdPartyUsername!username}">
+    
 
                             <div class="section-header">
                                 <h6 class="mb-0">
@@ -388,6 +388,9 @@
                                         <i class="fas fa-search me-1"></i>ব্যক্তি যাচাই করুন
                                     </span>
                                 </button>
+                                <a href="/verification-result?username=${username}" class="btn btn-outline-success btn-sm ms-md-1">
+                                    <i class="fas fa-clipboard-check me-1"></i>ফলাফল দেখুন
+                                </a>
                             </div>
                         </form>
                     </div>
@@ -420,12 +423,7 @@
                     <form id="modalLoginForm">
                         <input type="hidden" name="username" value="${username}">
                         
-                        <div class="mb-3">
-                            <label for="modalThirdPartyUsername" class="form-label">
-                                <i class="fas fa-user me-2"></i>Third Party Username
-                            </label>
-                            <input type="text" class="form-control" id="modalThirdPartyUsername" name="thirdPartyUsername" required>
-                        </div>
+
                         
                         <div class="mb-4">
                             <label for="modalThirdPartyPassword" class="form-label">

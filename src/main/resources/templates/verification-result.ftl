@@ -90,6 +90,8 @@
         .success-icon { color: #28a745; }
         .error-icon { color: #dc3545; }
         .warning-icon { color: #ffc107; }
+        
+
     </style>
 </head>
 <body>
@@ -102,7 +104,7 @@
                 <span class="navbar-text me-3">
                     <i class="fas fa-user me-2"></i>${username}
                 </span>
-                <a class="btn btn-outline-danger btn-sm" href="/logout?username=${username}&thirdPartyUsername=${thirdPartyUsername!username}">
+                <a class="btn btn-outline-danger btn-sm" href="/logout?username=${username}">
                     <i class="fas fa-sign-out-alt me-2"></i>Logout
                 </a>
             </div>
@@ -113,77 +115,131 @@
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-12">
-                    <div class="result-card p-4">
+                    <div class="result-card p-2">
                         <!-- Verification Status Header -->
-                        <div class="verification-status">
-                            <#if verificationResponse.verified?? && verificationResponse.verified == true>
-                                <i class="fas fa-check-circle text-success"></i>
-                                <h2 class="fw-bold text-success">Verification Successful!</h2>
-                                <p class="text-muted">All submitted information has been verified successfully</p>
-                            <#elseif verificationResponse.verified?? && verificationResponse.verified == false>
-                                <i class="fas fa-times-circle text-danger"></i>
-                                <h2 class="fw-bold text-danger">Verification Failed</h2>
-                                <p class="text-muted">Some information could not be verified</p>
-                            <#else>
-                                <i class="fas fa-exclamation-triangle text-warning"></i>
-                                <h2 class="fw-bold text-warning">Verification Status Unknown</h2>
-                                <p class="text-muted">Verification status could not be determined</p>
-                            </#if>
-                        </div>
+                         <#if verificationResponse?? && verificationResponse.verified?? && verificationResponse.verified == true>
+                             <div class="verification-status">
+                                 <i class="fas fa-check-circle text-success"></i>
+                                 <h2 class="fw-bold text-success">Verification Successful!</h2>
+                                 <p class="text-muted">All submitted information has been verified successfully</p>
+                             </div>
+                         <#elseif verificationResponse?? && verificationResponse.verified?? && verificationResponse.verified == false>
+                             <div class="verification-status">
+                                 <i class="fas fa-times-circle text-danger"></i>
+                                 <h2 class="fw-bold text-danger">Verification Failed</h2>
+                                 <p class="text-muted">Some information could not be verified</p>
+                             </div>
+                         <#else>
+                             <div class="verification-status">
+                                 <i class="fas fa-exclamation-triangle text-warning"></i>
+                                 <h2 class="fw-bold text-warning">Verification Status Unknown</h2>
+                                 <p class="text-muted">Verification status could not be determined</p>
+                             </div>
+                         </#if>
 
-                        <!-- Overall Status Section -->
-                        <div class="preview-section">
-                            <h5><i class="fas fa-info-circle me-2"></i>Overall Status</h5>
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <div class="info-label">Status</div>
-                                    <div class="info-value">${verificationResponse.status}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Status Code</div>
-                                    <div class="info-value">${verificationResponse.statusCode!''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Verification Result</div>
-                                    <div class="info-value">
-                                        <#if verificationResponse.verified?? && verificationResponse.verified == true>
-                                            <span class="status-badge bg-success text-white">
-                                                <i class="fas fa-check me-2"></i>Verified
-                                            </span>
-                                        <#elseif verificationResponse.verified?? && verificationResponse.verified == false>
-                                            <span class="status-badge bg-danger text-white">
-                                                <i class="fas fa-times me-2"></i>Not Verified
-                                            </span>
-                                        <#else>
-                                            <span class="status-badge bg-warning text-dark">
-                                                <i class="fas fa-exclamation-triangle me-2"></i>Status Unknown
-                                            </span>
-                                        </#if>
-                                    </div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Request ID</div>
-                                    <div class="info-value">${verificationResponse.requestId!''}</div>
-                                </div>
-                            </div>
-                        </div>
+                         <!-- Field Verification Results Section -->
+                         <#if verificationResponse?? && verificationResponse.fieldVerificationResult??>
+                             <div class="preview-section">
+                                 <h5><i class="fas fa-list-check me-2"></i>Field Verification Results</h5>
+                                 <div class="field-verification-grid">
+                                     <#if verificationResponse.fieldVerificationResult.dateOfBirth??>
+                                         <div class="field-verification-item">
+                                             <#if verificationResponse.fieldVerificationResult.dateOfBirth == true>
+                                                 <i class="fas fa-check success-icon"></i>
+                                                 <div class="info-label">Date of Birth</div>
+                                                 <div class="info-value text-success">Verified</div>
+                                             <#else>
+                                                 <i class="fas fa-times error-icon"></i>
+                                                 <div class="info-label">Date of Birth</div>
+                                                 <div class="info-value text-danger">Not Verified</div>
+                                             </#if>
+                                         </div>
+                                     </#if>
+                                     <#if verificationResponse.fieldVerificationResult.nameEn??>
+                                         <div class="field-verification-item">
+                                             <#if verificationResponse.fieldVerificationResult.nameEn == true>
+                                                 <i class="fas fa-check success-icon"></i>
+                                                 <div class="info-label">English Name</div>
+                                                 <div class="info-value text-success">Verified</div>
+                                             <#else>
+                                                 <i class="fas fa-times error-icon"></i>
+                                                 <div class="info-label">English Name</div>
+                                                 <div class="info-value text-danger">Not Verified</div>
+                                             </#if>
+                                         </div>
+                                     </#if>
+                                     <#if verificationResponse.fieldVerificationResult.name??>
+                                         <div class="field-verification-item">
+                                             <#if verificationResponse.fieldVerificationResult.name == true>
+                                                 <i class="fas fa-check success-icon"></i>
+                                                 <div class="info-label">Bengali Name</div>
+                                                 <div class="info-value text-success">Verified</div>
+                                             <#else>
+                                                 <i class="fas fa-times error-icon"></i>
+                                                 <div class="info-label">Bengali Name</div>
+                                                 <div class="info-value text-danger">Not Verified</div>
+                                             </#if>
+                                         </div>
+                                     </#if>
+                                     <#if verificationResponse.fieldVerificationResult.father??>
+                                         <div class="field-verification-item">
+                                             <#if verificationResponse.fieldVerificationResult.father == true>
+                                                 <i class="fas fa-check success-icon"></i>
+                                                 <div class="info-label">Father's Name</div>
+                                                 <div class="info-value text-success">Verified</div>
+                                             <#else>
+                                                 <i class="fas fa-times error-icon"></i>
+                                                 <div class="info-label">Father's Name</div>
+                                                 <div class="info-value text-danger">Not Verified</div>
+                                             </#if>
+                                         </div>
+                                     </#if>
+                                     <#if verificationResponse.fieldVerificationResult.mother??>
+                                         <div class="field-verification-item">
+                                             <#if verificationResponse.fieldVerificationResult.mother == true>
+                                                 <i class="fas fa-check success-icon"></i>
+                                                 <div class="info-label">Mother's Name</div>
+                                                 <div class="info-value text-success">Verified</div>
+                                             <#else>
+                                                 <i class="fas fa-times error-icon"></i>
+                                                 <div class="info-label">Mother's Name</div>
+                                                 <div class="info-value text-danger">Not Verified</div>
+                                             </#if>
+                                         </div>
+                                     </#if>
+                                     <#if verificationResponse.fieldVerificationResult.spouse??>
+                                         <div class="field-verification-item">
+                                             <#if verificationResponse.fieldVerificationResult.spouse == true>
+                                                 <i class="fas fa-check success-icon"></i>
+                                                 <div class="info-label">Spouse Name</div>
+                                                 <div class="info-value text-success">Verified</div>
+                                             <#else>
+                                                 <i class="fas fa-times error-icon"></i>
+                                                 <div class="info-label">Spouse Name</div>
+                                                 <div class="info-value text-danger">Not Verified</div>
+                                             </#if>
+                                         </div>
+                                     </#if>
+                                 </div>
+                             </div>
+                         </#if>
 
-                        <!-- Personal Information Section -->
-                        <#if verificationResponse.success?? && verificationResponse.success.data??>
+                                                   <!-- Personal Information Section -->
+                         <#if verificationResponse?? && verificationResponse.success?? && verificationResponse.success.data??>
                             <div class="preview-section">
                                 <h5><i class="fas fa-user me-2"></i>Personal Information</h5>
                                 <div class="info-grid">
                                     <div class="info-item">
                                         <div class="info-label">Full Name (English)</div>
-                                        <div class="info-value">${verificationResponse.success.data.nameEn!''}</div>
+                                        <div class="info-value">${verificationResponse.success.data.nameEn!'N/A'}</div>
                                     </div>
                                     <div class="info-item">
                                         <div class="info-label">Voter Area</div>
-                                        <div class="info-value">${verificationResponse.success.data.voterArea!''}</div>
+                                        <div class="info-value">${verificationResponse.success.data.voterArea!'N/A'}</div>
                                     </div>
                                     <div class="info-item">
                                         <div class="info-label">Mobile Number</div>
-                                        <div class="info-value">${verificationResponse.success.data.mobile!''}</div>
+                                        <div class="info-value">${verificationResponse.success.data.mobile!'N/A'}</div>
                                     </div>
                                     <div class="info-item">
                                         <div class="info-label">Fingerprint Status</div>
@@ -201,7 +257,7 @@
                                     </div>
                                     <div class="info-item">
                                         <div class="info-label">Mother's NID</div>
-                                        <div class="info-value">${verificationResponse.success.data.nidMother!''}</div>
+                                        <div class="info-value">${verificationResponse.success.data.nidMother!'N/A'}</div>
                                     </div>
                                 </div>
                             </div>
@@ -213,55 +269,55 @@
                                     <div class="info-grid">
                                         <div class="info-item">
                                             <div class="info-label">Division</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.division!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.division!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">District</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.district!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.district!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">RMO</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.rmo!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.rmo!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">Upazila</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.upozila!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.upozila!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">City Corporation/Municipality</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.cityCorporationOrMunicipality!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.cityCorporationOrMunicipality!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">Union/Ward</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.unionOrWard!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.unionOrWard!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">Post Office</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.postOffice!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.postOffice!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">Postal Code</div>
-                                            <div class="info-value">${verificationResponse.success.data.postalCode!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.postalCode!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">Ward for Union Porishod</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.wardForUnionPorishod!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.wardForUnionPorishod!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">Additional Mouza/Moholla</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.additionalMouzaOrMoholla!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.additionalMouzaOrMoholla!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">Additional Village/Road</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.additionalVillageOrRoad!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.additionalVillageOrRoad!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">Home/Holding No</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.homeOrHoldingNo!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.homeOrHoldingNo!'N/A'}</div>
                                         </div>
                                         <div class="info-item">
                                             <div class="info-label">Region</div>
-                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.region!''}</div>
+                                            <div class="info-value">${verificationResponse.success.data.permanentAddress.region!'N/A'}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -283,72 +339,10 @@
                             </#if>
                         </#if>
 
-                        <!-- Field Verification Results Section -->
-                        <#if verificationResponse.fieldVerificationResult??>
-                            <div class="preview-section">
-                                <h5><i class="fas fa-list-check me-2"></i>Field Verification Results</h5>
-                                <div class="field-verification-grid">
-                                    <div class="field-verification-item">
-                                        <#if verificationResponse.fieldVerificationResult.dateOfBirth?? && verificationResponse.fieldVerificationResult.dateOfBirth == true>
-                                            <i class="fas fa-check success-icon"></i>
-                                            <div class="info-label">Date of Birth</div>
-                                            <div class="info-value text-success">Verified</div>
-                                        <#else>
-                                            <i class="fas fa-times error-icon"></i>
-                                            <div class="info-label">Date of Birth</div>
-                                            <div class="info-value text-danger">Not Verified</div>
-                                        </#if>
-                                    </div>
-                                    <div class="field-verification-item">
-                                        <#if verificationResponse.fieldVerificationResult.nameEn?? && verificationResponse.fieldVerificationResult.nameEn == true>
-                                            <i class="fas fa-check success-icon"></i>
-                                            <div class="info-label">English Name</div>
-                                            <div class="info-value text-success">Verified</div>
-                                        <#else>
-                                            <i class="fas fa-times error-icon"></i>
-                                            <div class="info-label">English Name</div>
-                                            <div class="info-value text-danger">Not Verified</div>
-                                        </#if>
-                                    </div>
-                                    <div class="field-verification-item">
-                                        <#if verificationResponse.fieldVerificationResult.name?? && verificationResponse.fieldVerificationResult.name == true>
-                                            <i class="fas fa-check success-icon"></i>
-                                            <div class="info-label">Bengali Name</div>
-                                            <div class="info-value text-success">Verified</div>
-                                        <#else>
-                                            <i class="fas fa-times error-icon"></i>
-                                            <div class="info-label">Bengali Name</div>
-                                            <div class="info-value text-danger">Not Verified</div>
-                                        </#if>
-                                    </div>
-                                    <div class="field-verification-item">
-                                        <#if verificationResponse.fieldVerificationResult.father?? && verificationResponse.fieldVerificationResult.father == true>
-                                            <i class="fas fa-check success-icon"></i>
-                                            <div class="info-label">Father's Name</div>
-                                            <div class="info-value text-success">Verified</div>
-                                        <#else>
-                                            <i class="fas fa-times error-icon"></i>
-                                            <div class="info-label">Father's Name</div>
-                                            <div class="info-value text-danger">Not Verified</div>
-                                        </#if>
-                                    </div>
-                                    <div class="field-verification-item">
-                                        <#if verificationResponse.fieldVerificationResult.mother?? && verificationResponse.fieldVerificationResult.mother == true>
-                                            <i class="fas fa-check success-icon"></i>
-                                            <div class="info-label">Mother's Name</div>
-                                            <div class="info-value text-success">Verified</div>
-                                        <#else>
-                                            <i class="fas fa-times error-icon"></i>
-                                            <div class="info-label">Mother's Name</div>
-                                            <div class="info-value text-danger">Not Verified</div>
-                                        </#if>
-                                    </div>
-                                </div>
-                            </div>
-                        </#if>
+
 
                         <!-- Message Section (if any) -->
-                        <#if verificationResponse.message?? && verificationResponse.message != "">
+                        <#if verificationResponse?? && verificationResponse.message?? && verificationResponse.message != "">
                             <div class="preview-section">
                                 <h5><i class="fas fa-comment me-2"></i>Additional Information</h5>
                                 <div class="alert alert-info">
@@ -357,294 +351,91 @@
                             </div>
                         </#if>
 
-                        <!-- Action Buttons -->
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
-                            <a href="/verification-form?username=${username}&thirdPartyUsername=${thirdPartyUsername}" class="btn btn-primary me-md-2">
-                                <i class="fas fa-plus me-2"></i>New Verification
-                            </a>
-                            <a href="/dashboard?username=${username}" class="btn btn-outline-secondary">
-                                <i class="fas fa-home me-2"></i>Back to Dashboard
-                            </a>
-                            <button onclick="window.print()" class="btn btn-outline-info">
-                                <i class="fas fa-print me-2"></i>Print Result
-                            </button>
-                            <button onclick="loadMockResponse()" class="btn btn-outline-warning">
-                                <i class="fas fa-flask me-2"></i>Test Response Display
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                                                 <!-- Additional Verification Details -->
+                         <#if verificationResponse?? && verificationResponse.success?? && verificationResponse.success.data??>
+                            <div class="preview-section">
+                                <h5><i class="fas fa-clipboard-check me-2"></i>Additional Verification Details</h5>
+                                <div class="info-grid">
+                                    <#if verificationResponse.success.data.requestId??>
+                                        <div class="info-item">
+                                            <div class="info-label">Request ID</div>
+                                            <div class="info-value">${verificationResponse.success.data.requestId}</div>
+                                        </div>
+                                    </#if>
+                                    <#if verificationResponse.success.data.noFingerprint??>
+                                        <div class="info-item">
+                                            <div class="info-label">Fingerprint Records</div>
+                                            <div class="info-value">
+                                                <#if verificationResponse.success.data.noFingerprint == 1>
+                                                    <span class="status-badge bg-success text-white">
+                                                        <i class="fas fa-fingerprint me-2"></i>Available
+                                                    </span>
+                                                <#else>
+                                                    <span class="status-badge bg-warning text-dark">
+                                                        <i class="fas fa-exclamation-triangle me-2"></i>Not Available
+                                                    </span>
+                                                </#if>
+                                            </div>
+                                        </div>
+                                    </#if>
+                                    <#if verificationResponse.success.data.voterArea??>
+                                        <div class="info-item">
+                                            <div class="info-label">Voter Area</div>
+                                            <div class="info-value">${verificationResponse.success.data.voterArea}</div>
+                                        </div>
+                                    </#if>
+                                    <#if verificationResponse.success.data.mobile??>
+                                        <div class="info-item">
+                                            <div class="info-label">Mobile Number</div>
+                                            <div class="info-value">${verificationResponse.success.data.mobile}</div>
+                                        </div>
+                                    </#if>
+                                </div>
+                            </div>
+                        </#if>
+
+                                                 <!-- Action Buttons -->
+                         <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-2">
+                             <a href="/verification-form?username=${username}" class="btn btn-primary me-md-2">
+                                 <i class="fas fa-plus me-2"></i>New Verification
+                             </a>
+                             <a href="/dashboard?username=${username}" class="btn btn-outline-secondary me-md-2">
+                                 <i class="fas fa-home me-2"></i>Back to Dashboard
+                             </a>
+                                                           <button onclick="window.print()" class="btn btn-outline-info me-md-2">
+                                  <i class="fas fa-print me-2"></i>Print Result
+                              </button>
+                                                  </div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+     </div>
+     
+     <!-- Fallback message if no verification response data -->
+     <#if !verificationResponse?? || !verificationResponse.success??>
+         <div class="container mt-4">
+             <div class="row justify-content-center">
+                 <div class="col-lg-8">
+                     <div class="alert alert-info text-center">
+                         <i class="fas fa-info-circle fa-2x mb-3"></i>
+                         <h5>No Verification Results Available</h5>
+                         <p class="mb-3">You haven't performed any verifications yet, or the verification data is not available.</p>
+                         <a href="/verification-form?username=${username}" class="btn btn-primary">
+                             <i class="fas fa-plus me-2"></i>Start New Verification
+                         </a>
+                     </div>
+                 </div>
+             </div>
+         </div>
+     </#if>
 
     <script src="/static/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Test Response Display functionality
-        function loadMockResponse() {
-            // Show loading state
-            const resultCard = document.querySelector('.result-card');
-            const originalContent = resultCard.innerHTML;
-            
-            // Show loading indicator
-            resultCard.innerHTML = `
-                <div class="text-center p-5">
-                    <div class="spinner-border text-primary mb-3" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <h5>Loading Mock Response Data...</h5>
-                    <p class="text-muted">Testing response display functionality</p>
-                </div>
-            `;
-            
-            // Load the verification-response.json file
-            fetch('/verification-response.json')
-                .then(response => response.json())
-                .then(data => {
-                    // Display the mock response data in the verification result format
-                    displayMockResponse(data);
-                })
-                .catch(error => {
-                    // Show error and restore original content
-                    resultCard.innerHTML = `
-                        <div class="text-center p-5">
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                                <h5>Error Loading Mock Data</h5>
-                                <p>${error.message}</p>
-                                <button onclick="location.reload()" class="btn btn-primary">
-                                    <i class="fas fa-refresh me-2"></i>Reload Page
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
-        }
-        
-        function displayMockResponse(responseData) {
-            const resultCard = document.querySelector('.result-card');
-            
-            // Build the verification result display using the mock data
-            let html = '';
-            
-            // Verification Status Header
-            html += `
-                <div class="verification-status">
-                    <i class="fas fa-check-circle text-success"></i>
-                    <h2 class="fw-bold text-success">Mock Response Test - Verification Successful!</h2>
-                    <p class="text-muted">Testing response display with mock data from verification-response.json</p>
-                </div>
-            `;
-            
-            // Overall Status Section
-            html += `
-                <div class="preview-section">
-                    <h5><i class="fas fa-info-circle me-2"></i>Overall Status</h5>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">Status</div>
-                            <div class="info-value">${responseData.status}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Status Code</div>
-                            <div class="info-value">${responseData.statusCode || ''}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Verification Result</div>
-                            <div class="info-value">
-                                <span class="status-badge bg-success text-white">
-                                    <i class="fas fa-check me-2"></i>Verified
-                                </span>
-                            </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Request ID</div>
-                            <div class="info-value">${responseData.requestId || ''}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Personal Information Section
-            if (responseData.success && responseData.success.data) {
-                const data = responseData.success.data;
-                html += `
-                    <div class="preview-section">
-                        <h5><i class="fas fa-user me-2"></i>Personal Information</h5>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <div class="info-label">Full Name (English)</div>
-                                <div class="info-value">${data.nameEn || ''}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Voter Area</div>
-                                <div class="info-value">${data.voterArea || ''}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Mobile Number</div>
-                                <div class="info-value">${data.mobile || ''}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Fingerprint Status</div>
-                                <div class="info-value">
-                                    <span class="status-badge bg-success text-white">
-                                        <i class="fas fa-fingerprint me-2"></i>Available
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Mother's NID</div>
-                                <div class="info-value">${data.nidMother || ''}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                // Permanent Address Section
-                if (data.permanentAddress) {
-                    const addr = data.permanentAddress;
-                    html += `
-                        <div class="preview-section">
-                            <h5><i class="fas fa-map-marker-alt me-2"></i>Permanent Address</h5>
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <div class="info-label">Division</div>
-                                    <div class="info-value">${addr.division || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">District</div>
-                                    <div class="info-value">${addr.district || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">RMO</div>
-                                    <div class="info-value">${addr.rmo || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Upazila</div>
-                                    <div class="info-value">${addr.upozila || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">City Corporation/Municipality</div>
-                                    <div class="info-value">${addr.cityCorporationOrMunicipality || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Union/Ward</div>
-                                    <div class="info-value">${addr.unionOrWard || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Post Office</div>
-                                    <div class="info-value">${addr.postOffice || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Postal Code</div>
-                                    <div class="info-value">${addr.postalCode || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Ward for Union Porishod</div>
-                                    <div class="info-value">${addr.wardForUnionPorishod || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Additional Mouza/Moholla</div>
-                                    <div class="info-value">${addr.additionalMouzaOrMoholla || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Additional Village/Road</div>
-                                    <div class="info-value">${addr.additionalVillageOrRoad || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Home/Holding No</div>
-                                    <div class="info-value">${addr.homeOrHoldingNo || ''}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Region</div>
-                                    <div class="info-value">${addr.region || ''}</div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                // Photo Section
-                if (data.photo) {
-                    html += `
-                        <div class="preview-section">
-                            <h5><i class="fas fa-camera me-2"></i>Profile Photo</h5>
-                            <div class="photo-container">
-                                <img src="${data.photo}" alt="Profile Photo" 
-                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                                <p style="display: none; color: #6c757d;">
-                                    <i class="fas fa-image fa-3x mb-2"></i><br>
-                                    Photo not available or failed to load
-                                </p>
-                            </div>
-                        </div>
-                    `;
-                }
-            }
-            
-            // Field Verification Results Section
-            if (responseData.fieldVerificationResult) {
-                const fieldResult = responseData.fieldVerificationResult;
-                html += `
-                    <div class="preview-section">
-                        <h5><i class="fas fa-list-check me-2"></i>Field Verification Results</h5>
-                        <div class="field-verification-grid">
-                            <div class="field-verification-item">
-                                <i class="fas fa-check success-icon"></i>
-                                <div class="info-label">Date of Birth</div>
-                                <div class="info-value text-success">Verified</div>
-                            </div>
-                            <div class="field-verification-item">
-                                <i class="fas fa-check success-icon"></i>
-                                <div class="info-label">English Name</div>
-                                <div class="info-value text-success">Verified</div>
-                            </div>
-                            <div class="field-verification-item">
-                                <i class="fas fa-check success-icon"></i>
-                                <div class="info-label">Bengali Name</div>
-                                <div class="info-value text-success">Verified</div>
-                            </div>
-                            <div class="field-verification-item">
-                                <i class="fas fa-check success-icon"></i>
-                                <div class="info-label">Father's Name</div>
-                                <div class="info-value text-success">Verified</div>
-                            </div>
-                            <div class="field-verification-item">
-                                <i class="fas fa-check success-icon"></i>
-                                <div class="info-label">Mother's Name</div>
-                                <div class="info-value text-success">Verified</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Test Info Section
-            html += `
-                <div class="preview-section">
-                    <h5><i class="fas fa-info-circle me-2"></i>Test Information</h5>
-                    <div class="alert alert-info">
-                        <i class="fas fa-flask me-2"></i>
-                        <strong>Mock Data Test:</strong> This is displaying data from verification-response.json to test the UI rendering. 
-                        If you can see all the information properly formatted above, then the 503 error fix is working correctly!
-                    </div>
-                </div>
-            `;
-            
-            // Action Buttons
-            html += `
-                <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
-                    <button onclick="location.reload()" class="btn btn-primary me-md-2">
-                        <i class="fas fa-refresh me-2"></i>Back to Original
-                    </button>
-                    <button onclick="loadMockResponse()" class="btn btn-outline-warning">
-                        <i class="fas fa-flask me-2"></i>Reload Mock Data
-                    </button>
-                </div>
-            `;
-            
-            resultCard.innerHTML = html;
+        // Simple print functionality
+        function printResult() {
+            window.print();
         }
     </script>
 </body>

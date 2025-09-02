@@ -153,7 +153,7 @@ fun Route.webRoutes(
                         message = "Third-party authentication successful!"
                     ))
                 } else {
-                    call.respondRedirect("/verification-form?username=$username&thirdPartyUsername=$thirdPartyUsername")
+                    call.respondRedirect("/verification-form?username=$username")
                 }
             } else {
                 val errorMessage = loginResponse.error?.message ?: "Third-party login failed"
@@ -270,15 +270,44 @@ fun Route.webRoutes(
         
         call.respond(FreeMarkerContent("verification-form.ftl", mapOf(
             "title" to "Person Verification - Verification System",
-            "username" to username,
-            "thirdPartyUsername" to thirdPartyUsername
+            "username" to username
         )))
+    }
+    
+    get("/verification-result") {
+        try {
+            val username = call.request.queryParameters["username"] ?: ""
+            
+            if (username.isBlank()) {
+                call.respondRedirect("/")
+                return@get
+            }
+            
+            val isValidSession = kotlinx.coroutines.runBlocking { basicAuthSessionService.isValidSession(username) }
+            
+            if (!isValidSession) {
+                call.respondRedirect("/")
+                return@get
+            }
+            
+            // In a real implementation, you would pass the actual verification response data
+            // For now, we'll pass null to show "N/A" for all fields
+            val verificationResponse = null
+            
+            call.respond(FreeMarkerContent("verification-result.ftl", mapOf(
+                "title" to "Verification Result - Verification System",
+                "username" to username,
+                "verificationResponse" to verificationResponse
+            )))
+        } catch (e: Exception) {
+            logger.error("Error in verification-result route: ${e.message}", e)
+            call.respond(HttpStatusCode.InternalServerError, "Internal server error: ${e.message}")
+        }
     }
     
     post("/verify") {
         val formData = call.receiveParameters()
         val username = formData["username"] ?: ""
-        val thirdPartyUsername = formData["thirdPartyUsername"] ?: ""
         
         if (username.isBlank()) {
             call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Username is required"))
@@ -294,7 +323,7 @@ fun Route.webRoutes(
         try {
             // Temporarily skip JWT check to allow form submission
             // TODO: Re-enable JWT validation when third-party login is working
-            val jwt = jwtStorageService.getValidJwt(thirdPartyUsername)
+            val jwt = jwtStorageService.getValidJwt(username)
             // TODO:: uncomment after testing
             /*
             if (jwt == null) {
@@ -348,12 +377,11 @@ fun Route.webRoutes(
                 call.respond(responseDto)
             } else {
                 // Return HTML response for regular form submissions
-                call.respond(FreeMarkerContent("verification-result.ftl", mapOf(
-                    "title" to "Verification Result - Verification System",
-                    "username" to username,
-                    "thirdPartyUsername" to thirdPartyUsername,
-                    "verificationResponse" to verificationResponse
-                )))
+                            call.respond(FreeMarkerContent("verification-result.ftl", mapOf(
+                "title" to "Verification Result - Verification System",
+                "username" to username,
+                "verificationResponse" to verificationResponse
+            )))
             }
             
         } catch (e: Exception) {
@@ -392,12 +420,11 @@ fun Route.webRoutes(
                 call.respond(responseStatus, responseDto)
             } else {
                 // Return HTML response for regular form submissions
-                call.respond(FreeMarkerContent("verification-form.ftl", mapOf(
-                    "title" to "Person Verification - Verification System",
-                    "username" to username,
-                    "thirdPartyUsername" to thirdPartyUsername,
-                    "error" to errorMessage
-                )))
+                                 call.respond(FreeMarkerContent("verification-form.ftl", mapOf(
+                     "title" to "Person Verification - Verification System",
+                     "username" to username,
+                     "error" to errorMessage
+                 )))
             }
         }
     }
