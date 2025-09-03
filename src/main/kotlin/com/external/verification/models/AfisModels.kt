@@ -18,6 +18,27 @@ data class AfisVerificationRequest(
     val fingerEnums: List<String>
 )
 
+// Enhanced AFIS Verification Request with Capture
+@Serializable
+data class AfisVerificationWithCaptureRequest(
+    val dateOfBirth: String,
+    val nid10Digit: String? = null,
+    val nid17Digit: String? = null,
+    val fingerEnums: List<String>,
+    val qualityThreshold: Int? = 70,
+    val captureTimeout: Int? = 30000,
+    val retryCount: Int? = 3
+)
+
+// AFIS Fingerprint Capture Request
+@Serializable
+data class AfisFingerprintCaptureRequest(
+    val fingerEnums: List<String>,
+    val qualityThreshold: Int? = 70,
+    val captureTimeout: Int? = 60000,
+    val retryCount: Int? = 2
+)
+
 // AFIS Verification Response
 @Serializable
 data class AfisVerificationResponse(
@@ -37,6 +58,42 @@ data class AfisVerificationResponse(
         )
     }
 }
+
+// Enhanced AFIS Verification Response with Capture Summary
+@Serializable
+data class AfisVerificationWithCaptureResponse(
+    val afisVerification: AfisVerificationResponse,
+    val fingerprintCapture: FingerprintCaptureSummary
+)
+
+// Fingerprint Capture Summary for AFIS
+@Serializable
+data class FingerprintCaptureSummary(
+    val totalRequested: Int,
+    val successfullyCaptured: Int,
+    val failedFingers: List<String>,
+    val capturedFingerprints: List<CapturedFingerInfo>
+)
+
+// Captured Finger Information for AFIS
+@Serializable
+data class CapturedFingerInfo(
+    val fingerType: String,
+    val qualityScore: Int?,
+    val hasImageData: Boolean,
+    val hasWsqData: Boolean,
+    val captureTime: String?
+)
+
+// AFIS Fingerprint Capture Response
+@Serializable
+data class AfisFingerprintCaptureResponse(
+    val success: Boolean,
+    val capturedFingerprints: List<CapturedFingerInfo>,
+    val failedFingers: List<String>,
+    val totalTime: Long?,
+    val qualityThreshold: Int
+)
 
 // Finger Upload URL
 @Serializable

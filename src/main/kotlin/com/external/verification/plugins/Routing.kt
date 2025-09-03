@@ -71,7 +71,7 @@ fun Application.configureRouting() {
             authRoutes(thirdPartyApiService)
             verificationRoutes(thirdPartyApiService)
             billingRoutes(thirdPartyApiService)
-            afisRoutes(thirdPartyApiService)
+            afisRoutes(thirdPartyApiService, fingerprintDeviceService)
         }
     }
 }

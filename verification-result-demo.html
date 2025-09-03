@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Result Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            padding-top: 80px;
+        }
+
+        .navbar {
+            background: transparent !important;
+            border-bottom: 1px solid #e9ecef;
+            z-index: 1030;
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+        }
+
+        .main-content {
+            padding-top: 70px;
+            padding-bottom: 30px;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .status-badge {
+            font-size: 1rem;
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+
+        .verification-status {
+            text-align: center;
+            margin-bottom: 12px;
+            padding: 12px 10px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .verification-status i {
+            font-size: 2rem;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .verification-status h2 {
+            margin-bottom: 4px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .verification-status p {
+            font-size: 0.8rem;
+            margin-bottom: 0;
+        }
+
+        .preview-section {
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-left: 2px solid #007bff;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .preview-section:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-section h5 {
+            color: #007bff;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .preview-section h5 i {
+            margin-right: 4px;
+            width: 14px;
+            text-align: center;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 8px;
+        }
+
+        .info-item {
+            padding: 8px 10px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .info-value {
+            color: #212529;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .field-verification-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .field-verification-item {
+            padding: 8px 6px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .field-verification-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .field-verification-item i {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .photo-container {
+            text-align: center;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .photo-container img {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .photo-container img:hover {
+            transform: scale(1.01);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .success-icon { color: #28a745; }
+        .error-icon { color: #dc3545; }
+        .warning-icon { color: #ffc107; }
+
+        .bg-success { background-color: #28a745 !important; }
+        .bg-danger { background-color: #dc3545 !important; }
+        .bg-warning { background-color: #ffc107 !important; }
+        .bg-info { background-color: #17a2b8 !important; }
+        .bg-primary { background-color: #007bff !important; }
+        
+        /* Enhanced button styling */
+        .btn-outline-success {
+            border: 2px solid #28a745 !important;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-success:hover {
+            background-color: #28a745 !important;
+            border-color: #28a745 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+        }
+
+        /* Responsive improvements - Ultra Compact Version */
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+            
+            .field-verification-grid {
+                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+                gap: 6px;
+            }
+            
+            .preview-section {
+                padding: 8px;
+                margin-bottom: 8px;
+            }
+            
+            .verification-status {
+                padding: 10px 8px;
+            }
+            
+            .verification-status i {
+                font-size: 1.8rem;
+            }
+            
+            .verification-status h2 {
+                font-size: 1rem;
+            }
+            
+            .verification-status p {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+            
+            .field-verification-grid {
+                grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+                gap: 5px;
+            }
+            
+            .preview-section {
+                padding: 6px;
+                margin-bottom: 6px;
+            }
+            
+            .info-item {
+                padding: 6px 8px;
+            }
+            
+            .field-verification-item {
+                padding: 6px 4px;
+            }
+            
+            .photo-container {
+                padding: 8px;
+            }
+            
+            .photo-container img {
+                max-height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-shield-alt me-2"></i>Verification System
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user me-2"></i>Demo User
+                </span>
+                <a class="btn btn-outline-danger btn-sm" href="#">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-12">
+                    <div class="result-card p-2">
+                                                 <!-- Verification Status Header -->
+                         <div class="verification-status">
+                             <i class="fas fa-check-circle text-success"></i>
+                             <h2 class="fw-bold text-success">Verification Successful!</h2>
+                             <p class="text-muted">All submitted information has been verified successfully</p>
+                         </div>
+
+                         <!-- Field Verification Results Section -->
+                         <div class="preview-section">
+                             <h5><i class="fas fa-list-check me-2"></i>Field Verification Results</h5>
+                             <div class="field-verification-grid">
+                                 <div class="field-verification-item">
+                                     <i class="fas fa-check success-icon"></i>
+                                     <div class="info-label">Date of Birth</div>
+                                     <div class="info-value text-success">Verified</div>
+                                 </div>
+                                 <div class="field-verification-item">
+                                     <i class="fas fa-check success-icon"></i>
+                                     <div class="info-label">English Name</div>
+                                     <div class="info-value text-success">Verified</div>
+                                 </div>
+                                 <div class="field-verification-item">
+                                     <i class="fas fa-check success-icon"></i>
+                                     <div class="info-label">Bengali Name</div>
+                                     <div class="info-value text-success">Verified</div>
+                                 </div>
+                                 <div class="field-verification-item">
+                                     <i class="fas fa-check success-icon"></i>
+                                     <div class="info-label">Father's Name</div>
+                                     <div class="info-value text-success">Verified</div>
+                                 </div>
+                                 <div class="field-verification-item">
+                                     <i class="fas fa-check success-icon"></i>
+                                     <div class="info-label">Mother's Name</div>
+                                     <div class="info-value text-success">Verified</div>
+                                 </div>
+                             </div>
+                         </div>
+
+                         <!-- Personal Information Section -->
+                        <div class="preview-section">
+                            <h5><i class="fas fa-user me-2"></i>Personal Information</h5>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Full Name (English)</div>
+                                    <div class="info-value">Md. Monju Al-Amin (Monir)</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Voter Area</div>
+                                    <div class="info-value">আদাবর</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Mobile Number</div>
+                                    <div class="info-value">01552392080</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Fingerprint Status</div>
+                                    <div class="info-value">
+                                        <span class="status-badge bg-success text-white">
+                                            <i class="fas fa-fingerprint me-2"></i>Available
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Mother's NID</div>
+                                    <div class="info-value">33333444444444444</div>
+                                </div>
+                            </div>
+        </div>
+
+                        <!-- Permanent Address Section -->
+                        <div class="preview-section">
+                            <h5><i class="fas fa-map-marker-alt me-2"></i>Permanent Address</h5>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Division</div>
+                                    <div class="info-value">ঢাকা</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">District</div>
+                                    <div class="info-value">ঢাকা</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">RMO</div>
+                                    <div class="info-value">9</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Upazila</div>
+                                    <div class="info-value">আদাবর</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">City Corporation/Municipality</div>
+                                    <div class="info-value">ঢাকা উত্তর সিটি কর্পোরেশন</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Union/Ward</div>
+                                    <div class="info-value">ওয়ার্ড নং-৩০</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Post Office</div>
+                                    <div class="info-value">আমতলি</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Postal Code</div>
+                                    <div class="info-value">৮৭১০</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Ward for Union Porishod</div>
+                                    <div class="info-value">37</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Additional Mouza/Moholla</div>
+                                    <div class="info-value">mn</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Additional Village/Road</div>
+                                    <div class="info-value">j</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Home/Holding No</div>
+                                    <div class="info-value">২০/এ আতোয়াজান</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Region</div>
+                                    <div class="info-value">ঢাকা</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Photo Section -->
+                        <div class="preview-section">
+                            <h5><i class="fas fa-camera me-2"></i>Profile Photo</h5>
+                            <div class="photo-container">
+                                <img src="https://www.shutterstock.com/image-photo/passport-photo-man-on-white-260nw-2538513719.jpg" 
+                                     alt="Profile Photo" 
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <p style="display: none; color: #6c757d;">
+                                    <i class="fas fa-image fa-3x mb-2"></i><br>
+                                    Photo not available or failed to load
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Field Verification Results Section -->
+                        <div class="preview-section">
+                            <h5><i class="fas fa-list-check me-2"></i>Field Verification Results</h5>
+                            <div class="field-verification-grid">
+                                <div class="field-verification-item">
+                                    <i class="fas fa-check success-icon"></i>
+                                    <div class="info-label">Date of Birth</div>
+                                    <div class="info-value text-success">Verified</div>
+                                </div>
+                                <div class="field-verification-item">
+                                    <i class="fas fa-check success-icon"></i>
+                                    <div class="info-label">English Name</div>
+                                    <div class="info-value text-success">Verified</div>
+                                </div>
+                                <div class="field-verification-item">
+                                    <i class="fas fa-check success-icon"></i>
+                                    <div class="info-label">Bengali Name</div>
+                                    <div class="info-value text-success">Verified</div>
+                                </div>
+                                <div class="field-verification-item">
+                                    <i class="fas fa-check success-icon"></i>
+                                    <div class="info-label">Father's Name</div>
+                                    <div class="info-value text-success">Verified</div>
+                                </div>
+                                <div class="field-verification-item">
+                                    <i class="fas fa-check success-icon"></i>
+                                    <div class="info-label">Mother's Name</div>
+                                    <div class="info-value text-success">Verified</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Verification Details -->
+                        <div class="preview-section">
+                            <h5><i class="fas fa-clipboard-check me-2"></i>Additional Verification Details</h5>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Request ID</div>
+                                    <div class="info-value">74978f55-26e5-48f9-8686-7e92ec86fc22</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Fingerprint Records</div>
+                                    <div class="info-value">
+                                        <span class="status-badge bg-success text-white">
+                                            <i class="fas fa-fingerprint me-2"></i>Available
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Voter Area</div>
+                                    <div class="info-value">আদাবর</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Mobile Number</div>
+                                    <div class="info-value">01552392080</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-2">
+                            <a href="#" class="btn btn-primary me-md-2">
+                                <i class="fas fa-plus me-2"></i>New Verification
+                            </a>
+                                                         <a href="javascript:void(0)" class="btn btn-outline-success me-md-2" onclick="showVerificationResults()">
+                                 <i class="fas fa-clipboard-check me-2"></i>ফলাফল দেখুন
+                             </a>
+                            <a href="#" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-home me-2"></i>Back to Dashboard
+                            </a>
+                            <button onclick="window.print()" class="btn btn-outline-info">
+                                <i class="fas fa-print me-2"></i>Print Result
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+     
+     <script>
+         // Function to handle "ফলাফল দেখুন" button click
+         function showVerificationResults() {
+             // Show a demo message instead of causing a 500 error
+             alert('ফলাফল দেখুন button clicked!\n\nThis would normally navigate to the verification results page.\n\nIn the actual application, this button would redirect to:\n/verification-result?username=currentUser&thirdPartyUsername=currentUser');
+             
+             // Alternative: You could redirect to a demo page or show a modal
+             // window.location.href = '/verification-result?username=demo&thirdPartyUsername=demo';
+         }
+     </script>
+ </body>
+ </html>

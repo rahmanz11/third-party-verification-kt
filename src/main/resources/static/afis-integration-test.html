@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFIS Integration with Fingerprint Capture Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .status.warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        .button:hover { background-color: #0056b3; }
+        .button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .button.success { background-color: #28a745; }
+        .button.danger { background-color: #dc3545; }
+        .button.warning { background-color: #ffc107; color: #212529; }
+        .button.primary { background-color: #17a2b8; }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        .result {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .finger-selection {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .finger-option {
+            text-align: center;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .finger-option:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .finger-option.selected {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .finger-option input[type="checkbox"] {
+            display: none;
+        }
+        .workflow-step {
+            background-color: #e9ecef;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .workflow-step h4 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #28a745;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 AFIS Integration with Fingerprint Capture Test</h1>
+    
+    <div class="container">
+        <h2>📡 System Status</h2>
+        <div id="systemStatus" class="status info">Checking system status...</div>
+        <button class="button" onclick="checkSystemStatus()">🔄 Refresh Status</button>
+        <button class="button primary" onclick="checkDeviceStatus()">🔌 Check Device</button>
+    </div>
+
+    <div class="grid">
+        <div class="container">
+            <h2>📸 Fingerprint Capture</h2>
+            <div class="form-group">
+                <label>Select Fingers for Capture:</label>
+                <div class="finger-selection">
+                    <div class="finger-option" onclick="toggleFinger(this, 'LEFT_THUMB')">
+                        <input type="checkbox" id="LEFT_THUMB" value="LEFT_THUMB">
+                        <strong>Left Thumb</strong><br>
+                        <small>LT</small>
+                    </div>
+                    <div class="finger-option" onclick="toggleFinger(this, 'LEFT_INDEX')">
+                        <input type="checkbox" id="LEFT_INDEX" value="LEFT_INDEX">
+                        <strong>Left Index</strong><br>
+                        <small>LI</small>
+                    </div>
+                    <div class="finger-option" onclick="toggleFinger(this, 'LEFT_MIDDLE')">
+                        <input type="checkbox" id="LEFT_MIDDLE" value="LEFT_MIDDLE">
+                        <strong>Left Middle</strong><br>
+                        <small>LM</small>
+                    </div>
+                    <div class="finger-option" onclick="toggleFinger(this, 'LEFT_RING')">
+                        <input type="checkbox" id="LEFT_RING" value="LEFT_RING">
+                        <strong>Left Ring</strong><br>
+                        <small>LR</small>
+                    </div>
+                    <div class="finger-option" onclick="toggleFinger(this, 'LEFT_LITTLE')">
+                        <input type="checkbox" id="LEFT_LITTLE" value="LEFT_LITTLE">
+                        <strong>Left Little</strong><br>
+                        <small>LL</small>
+                    </div>
+                    <div class="finger-option" onclick="toggleFinger(this, 'RIGHT_THUMB')">
+                        <input type="checkbox" id="RIGHT_THUMB" value="RIGHT_THUMB">
+                        <strong>Right Thumb</strong><br>
+                        <small>RT</small>
+                    </div>
+                    <div class="finger-option" onclick="toggleFinger(this, 'RIGHT_INDEX')">
+                        <input type="checkbox" id="RIGHT_INDEX" value="RIGHT_INDEX">
+                        <strong>Right Index</strong><br>
+                        <small>RI</small>
+                    </div>
+                    <div class="finger-option" onclick="toggleFinger(this, 'RIGHT_MIDDLE')">
+                        <input type="checkbox" id="RIGHT_MIDDLE" value="RIGHT_MIDDLE">
+                        <strong>Right Middle</strong><br>
+                        <small>RM</small>
+                    </div>
+                    <div class="finger-option" onclick="toggleFinger(this, 'RIGHT_RING')">
+                        <input type="checkbox" id="RIGHT_RING" value="RIGHT_RING">
+                        <strong>Right Ring</strong><br>
+                        <small>RR</small>
+                    </div>
+                    <div class="finger-option" onclick="toggleFinger(this, 'RIGHT_LITTLE')">
+                        <input type="checkbox" id="RIGHT_LITTLE" value="RIGHT_LITTLE">
+                        <strong>Right Little</strong><br>
+                        <small>RL</small>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="qualityThreshold">Quality Threshold (0-100):</label>
+                <input type="number" id="qualityThreshold" value="70" min="0" max="100">
+            </div>
+            <button class="button success" onclick="captureFingerprints()">📸 Capture Selected Fingers</button>
+            <button class="button warning" onclick="clearFingerSelection()">🗑️ Clear Selection</button>
+        </div>
+
+        <div class="container">
+            <h2>🔐 AFIS Verification Setup</h2>
+            <div class="form-group">
+                <label for="dateOfBirth">Date of Birth (YYYY-MM-DD):</label>
+                <input type="date" id="dateOfBirth" required>
+            </div>
+            <div class="form-group">
+                <label for="nid10Digit">10-Digit NID (Optional):</label>
+                <input type="text" id="nid10Digit" placeholder="1234567890" maxlength="10">
+            </div>
+            <div class="form-group">
+                <label for="nid17Digit">17-Digit NID (Optional):</label>
+                <input type="text" id="nid17Digit" placeholder="12345678901234567" maxlength="17">
+            </div>
+            <div class="form-group">
+                <label for="jwtToken">JWT Token (Required for AFIS):</label>
+                <textarea id="jwtToken" rows="3" placeholder="Enter your JWT token here..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="container full-width">
+        <h2>🚀 Complete AFIS Workflow</h2>
+        <div class="workflow-step">
+            <h4>Step 1: Capture Fingerprints</h4>
+            <p>Select fingers and capture high-quality fingerprints using the Digital Persona scanner.</p>
+        </div>
+        <div class="workflow-step">
+            <h4>Step 2: AFIS Verification</h4>
+            <p>Submit captured fingerprints along with demographic data for AFIS verification.</p>
+        </div>
+        <div class="workflow-step">
+            <h4>Step 3: Result Processing</h4>
+            <p>Process AFIS verification results and handle any verification responses.</p>
+        </div>
+        
+        <div class="form-group">
+            <label>Workflow Progress:</label>
+            <div class="progress-bar">
+                <div class="progress-fill" id="workflowProgress"></div>
+            </div>
+        </div>
+        
+        <button class="button success" onclick="runCompleteWorkflow()">🚀 Run Complete AFIS Workflow</button>
+        <button class="button primary" onclick="runAfisVerificationOnly()">🔐 AFIS Verification Only</button>
+    </div>
+
+    <div class="container full-width">
+        <h2>📊 Results & Logs</h2>
+        <div id="results" class="result">Ready to test AFIS integration with fingerprint capture...</div>
+        <button class="button" onclick="clearResults()">🗑️ Clear Results</button>
+        <button class="button warning" onclick="exportResults()">💾 Export Results</button>
+    </div>
+
+    <script>
+        const API_BASE = '/afis';
+        let capturedFingerprints = [];
+        let workflowProgress = 0;
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            results.textContent += logEntry;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('systemStatus');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function updateProgress(percentage) {
+            workflowProgress = percentage;
+            document.getElementById('workflowProgress').style.width = percentage + '%';
+        }
+
+        function toggleFinger(element, fingerType) {
+            const checkbox = document.getElementById(fingerType);
+            checkbox.checked = !checkbox.checked;
+            
+            if (checkbox.checked) {
+                element.classList.add('selected');
+            } else {
+                element.classList.remove('selected');
+            }
+        }
+
+        function clearFingerSelection() {
+            document.querySelectorAll('.finger-option').forEach(option => {
+                option.classList.remove('selected');
+                const checkbox = option.querySelector('input[type="checkbox"]');
+                checkbox.checked = false;
+            });
+        }
+
+        function getSelectedFingers() {
+            const selected = [];
+            document.querySelectorAll('.finger-option input[type="checkbox"]:checked').forEach(checkbox => {
+                selected.push(checkbox.value);
+            });
+            return selected;
+        }
+
+        async function makeRequest(endpoint, method = 'GET', body = null, requireAuth = false) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                if (requireAuth) {
+                    const jwt = document.getElementById('jwtToken').value.trim();
+                    if (!jwt) {
+                        throw new Error('JWT token is required for this operation');
+                    }
+                    options.headers['Authorization'] = `Bearer ${jwt}`;
+                }
+
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
+                
+                return data;
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        async function checkSystemStatus() {
+            try {
+                updateStatus('Checking system status...', 'info');
+                const response = await makeRequest('/device/status');
+                
+                if (response.afisReady) {
+                    updateStatus('✅ System Ready - Device Connected and AFIS Ready', 'success');
+                    log(`✅ System Status: Device Connected, SDK: ${response.sdkStatus}`);
+                } else {
+                    updateStatus('⚠️ System Partially Ready - Device Not Connected', 'warning');
+                    log(`⚠️ System Status: Device Not Connected, SDK: ${response.sdkStatus}`);
+                }
+            } catch (error) {
+                updateStatus(`❌ System Unavailable: ${error.message}`, 'error');
+                log(`❌ System status check failed: ${error.message}`);
+            }
+        }
+
+        async function checkDeviceStatus() {
+            try {
+                log('🔌 Checking device status...');
+                const response = await makeRequest('/device/status');
+                
+                log(`🔌 Device Status:
+    Connected: ${response.deviceStatus.connected}
+    Device Name: ${response.deviceStatus.deviceName || 'N/A'}
+    Device ID: ${response.deviceStatus.deviceId || 'N/A'}
+    SDK Status: ${response.sdkStatus}
+    AFIS Ready: ${response.afisReady}`);
+                
+                if (response.afisReady) {
+                    updateStatus('✅ Device Ready for AFIS Operations', 'success');
+                } else {
+                    updateStatus('❌ Device Not Ready for AFIS Operations', 'error');
+                }
+            } catch (error) {
+                log(`❌ Device status check failed: ${error.message}`);
+                updateStatus('❌ Device Status Check Failed', 'error');
+            }
+        }
+
+        async function captureFingerprints() {
+            try {
+                const selectedFingers = getSelectedFingers();
+                if (selectedFingers.length === 0) {
+                    log('❌ Please select at least one finger for capture');
+                    return;
+                }
+
+                const qualityThreshold = parseInt(document.getElementById('qualityThreshold').value);
+                log(`📸 Starting capture for: ${selectedFingers.join(', ')} (Quality: ${qualityThreshold})`);
+                
+                updateProgress(25);
+                
+                const response = await makeRequest('/capture-fingerprints', 'POST', {
+                    fingerEnums: selectedFingers,
+                    qualityThreshold: qualityThreshold,
+                    captureTimeout: 60000,
+                    retryCount: 2
+                });
+                
+                updateProgress(50);
+                
+                if (response.success) {
+                    capturedFingerprints = response.capturedFingerprints;
+                    log(`✅ Fingerprint capture completed:
+    Captured: ${response.capturedFingerprints.length} fingers
+    Failed: ${response.failedFingers.length} fingers
+    Total Time: ${response.totalTime || 'N/A'} ms`);
+                    
+                    if (response.capturedFingerprints.length > 0) {
+                        log('📸 Captured Fingers:');
+                        response.capturedFingerprints.forEach(finger => {
+                            log(`    - ${finger.fingerType}: Quality ${finger.qualityScore || 'N/A'}, Image: ${finger.hasImageData}, WSQ: ${finger.hasWsqData}`);
+                        });
+                    }
+                    
+                    if (response.failedFingers.length > 0) {
+                        log('❌ Failed Fingers:');
+                        response.failedFingers.forEach(finger => {
+                            log(`    - ${finger}`);
+                        });
+                    }
+                    
+                    updateStatus(`✅ Captured ${response.capturedFingerprints.length} fingerprints successfully`, 'success');
+                } else {
+                    log(`❌ Fingerprint capture failed`);
+                    updateStatus('❌ Fingerprint Capture Failed', 'error');
+                }
+            } catch (error) {
+                log(`❌ Fingerprint capture error: ${error.message}`);
+                updateStatus('❌ Capture Error', 'error');
+            }
+        }
+
+        async function runCompleteWorkflow() {
+            try {
+                log('🚀 Starting Complete AFIS Workflow...');
+                updateProgress(0);
+                
+                // Step 1: Validate inputs
+                const dateOfBirth = document.getElementById('dateOfBirth').value;
+                const nid10Digit = document.getElementById('nid10Digit').value.trim();
+                const nid17Digit = document.getElementById('nid17Digit').value.trim();
+                const selectedFingers = getSelectedFingers();
+                
+                if (!dateOfBirth) {
+                    throw new Error('Date of Birth is required');
+                }
+                
+                if (selectedFingers.length === 0) {
+                    throw new Error('Please select at least one finger');
+                }
+                
+                if (!nid10Digit && !nid17Digit) {
+                    throw new Error('Either 10-digit or 17-digit NID is required');
+                }
+                
+                updateProgress(10);
+                log('✅ Input validation passed');
+                
+                // Step 2: Capture fingerprints
+                log('📸 Step 2: Capturing fingerprints...');
+                updateProgress(20);
+                
+                const qualityThreshold = parseInt(document.getElementById('qualityThreshold').value);
+                const captureResponse = await makeRequest('/capture-fingerprints', 'POST', {
+                    fingerEnums: selectedFingers,
+                    qualityThreshold: qualityThreshold,
+                    captureTimeout: 60000,
+                    retryCount: 2
+                });
+                
+                if (!captureResponse.success || captureResponse.capturedFingerprints.length === 0) {
+                    throw new Error('Fingerprint capture failed');
+                }
+                
+                updateProgress(40);
+                log(`✅ Captured ${captureResponse.capturedFingerprints.length} fingerprints`);
+                
+                // Step 3: AFIS Verification
+                log('🔐 Step 3: Submitting to AFIS verification...');
+                updateProgress(60);
+                
+                const afisResponse = await makeRequest('/verification-with-capture', 'POST', {
+                    dateOfBirth: dateOfBirth,
+                    nid10Digit: nid10Digit || null,
+                    nid17Digit: nid17Digit || null,
+                    fingerEnums: captureResponse.capturedFingerprints.map(f => f.fingerType),
+                    qualityThreshold: qualityThreshold,
+                    captureTimeout: 30000,
+                    retryCount: 3
+                }, true);
+                
+                updateProgress(80);
+                log('✅ AFIS verification submitted successfully');
+                
+                // Step 4: Process results
+                log('📊 Step 4: Processing results...');
+                updateProgress(90);
+                
+                log(`🎉 Complete Workflow Results:
+    AFIS Status: ${afisResponse.afisVerification.status}
+    Captured Fingers: ${afisResponse.fingerprintCapture.successfullyCaptured}/${afisResponse.fingerprintCapture.totalRequested}
+    Failed Fingers: ${afisResponse.fingerprintCapture.failedFingers.length}`);
+                
+                if (afisResponse.afisVerification.success) {
+                    log(`🔐 AFIS Success: ${afisResponse.afisVerification.success.data.fingerUploadUrls.length} upload URLs provided`);
+                }
+                
+                updateProgress(100);
+                updateStatus('🎉 Complete AFIS Workflow Completed Successfully!', 'success');
+                
+            } catch (error) {
+                log(`❌ Complete workflow failed: ${error.message}`);
+                updateStatus('❌ Workflow Failed', 'error');
+                updateProgress(0);
+            }
+        }
+
+        async function runAfisVerificationOnly() {
+            try {
+                log('🔐 Running AFIS Verification Only...');
+                
+                const dateOfBirth = document.getElementById('dateOfBirth').value;
+                const nid10Digit = document.getElementById('nid10Digit').value.trim();
+                const nid17Digit = document.getElementById('nid17Digit').value.trim();
+                const selectedFingers = getSelectedFingers();
+                
+                if (!dateOfBirth || selectedFingers.length === 0 || (!nid10Digit && !nid17Digit)) {
+                    throw new Error('Please fill in all required fields and select fingers');
+                }
+                
+                const response = await makeRequest('/verification-secured', 'POST', {
+                    dateOfBirth: dateOfBirth,
+                    nid10Digit: nid10Digit || null,
+                    nid17Digit: nid17Digit || null,
+                    fingerEnums: selectedFingers
+                }, true);
+                
+                log(`✅ AFIS Verification Response:
+    Status: ${response.status}
+    Status Code: ${response.statusCode || 'N/A'}`);
+                
+                if (response.success) {
+                    log(`🔐 AFIS Success: ${response.success.data.fingerUploadUrls.length} upload URLs provided`);
+                    response.success.data.fingerUploadUrls.forEach(url => {
+                        log(`    - ${url.finger}: ${url.url}`);
+                    });
+                } else if (response.error) {
+                    log(`❌ AFIS Error: ${response.error.field} - ${response.error.message}`);
+                }
+                
+            } catch (error) {
+                log(`❌ AFIS verification failed: ${error.message}`);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').textContent = 'Results cleared...\n';
+            updateProgress(0);
+        }
+
+        function exportResults() {
+            const results = document.getElementById('results').textContent;
+            const blob = new Blob([results], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `afis-test-results-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Auto-check system status on page load
+        window.addEventListener('load', () => {
+            checkSystemStatus();
+        });
+    </script>
+</body>
+</html>
