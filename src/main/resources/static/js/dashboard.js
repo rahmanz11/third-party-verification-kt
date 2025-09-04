@@ -220,21 +220,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function goToFingerprintCapture() {
-        const username = document.body.getAttribute('data-username');
-        
-        if (username) {
-            // Navigate to fingerprint capture page
-            window.location.href = '/fingerprint-capture?username=' + encodeURIComponent(username);
-        } else {
-            alert('Username not found. Please login first.');
-        }
-    }
     
     window.checkThirdPartyLogin = checkThirdPartyLogin;
     window.checkJwtForPasswordChange = checkJwtForPasswordChange;
     window.checkJwtForBilling = checkJwtForBilling;
     window.thirdPartyLogout = thirdPartyLogout;
     window.goToAfisVerification = goToAfisVerification;
-    window.goToFingerprintCapture = goToFingerprintCapture;
 });

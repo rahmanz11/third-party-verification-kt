@@ -37,8 +37,8 @@ function initializePage() {
     // Initialize quality threshold display
     updateQualityThresholdDisplay();
     
-    // Check if we have any stored capture results
-    loadStoredResults();
+    // Clear old results on page load to start fresh
+    clearOldResults();
 }
 
 /**
@@ -69,7 +69,7 @@ function setupEventListeners() {
  */
 function updateQualityThresholdDisplay() {
     const slider = document.getElementById('qualityThreshold');
-    const display = document.getElementById('qualityThresholdValue');
+    const display = document.getElementById('qualityValue');
     
     // Defensive checks to prevent null reference errors
     if (!slider || !display) {
@@ -88,7 +88,7 @@ function updateQualityThresholdDisplay() {
  */
 function updateStartCaptureButton() {
     const selectedFingers = getSelectedFingers();
-    const startBtn = document.getElementById('startCaptureBtn');
+    const startBtn = document.getElementById('captureBtn');
     
     // Defensive check to prevent null reference errors
     if (!startBtn) {
@@ -472,9 +472,9 @@ async function startCapture() {
         showCaptureProgress();
         
         // Get capture parameters
-        const qualityThreshold = parseInt(document.getElementById('qualityThreshold').value);
-        const captureTimeout = parseInt(document.getElementById('captureTimeout').value);
-        const retryCount = parseInt(document.getElementById('retryCount').value);
+        const qualityThreshold = parseInt(document.getElementById('qualityThreshold')?.value || 70);
+        const captureTimeout = parseInt(document.getElementById('captureTimeout')?.value || 60000);
+        const retryCount = parseInt(document.getElementById('retryCount')?.value || 2);
         
         // Start batch capture
         const request = {
@@ -502,11 +502,20 @@ async function startCapture() {
         console.log('Response capturedFingers:', result.capturedFingers);
         console.log('Response failedFingers:', result.failedFingers);
         console.log('Response fingers:', result.fingers);
+        console.log('capturedFingers type:', typeof result.capturedFingers);
+        console.log('failedFingers type:', typeof result.failedFingers);
+        console.log('capturedFingers isArray:', Array.isArray(result.capturedFingers));
+        console.log('failedFingers isArray:', Array.isArray(result.failedFingers));
         
         if (result.success) {
             // Validate response structure before processing
-            if (result.capturedFingers && result.failedFingers) {
-                processCaptureResults(result);
+            if (result.capturedFingers !== undefined) {
+                // Ensure failedFingers is an array (even if empty)
+                const processedResult = {
+                    ...result,
+                    failedFingers: result.failedFingers || []
+                };
+                processCaptureResults(processedResult);
             } else if (result.fingers) {
                 // Handle case where response has 'fingers' array instead of separate arrays
                 console.log('Processing response with fingers array:', result);
@@ -595,33 +604,43 @@ function hideCaptureProgress() {
  * Process capture results
  */
 function processCaptureResults(result) {
-    console.log('Processing capture results:', result);
+    console.log('=== PROCESS CAPTURE RESULTS DEBUG ===');
+    console.log('Full result object:', JSON.stringify(result, null, 2));
+    console.log('Result type:', typeof result);
+    console.log('Result keys:', Object.keys(result));
     
     try {
         // Handle successful captures
         if (result.capturedFingers && Array.isArray(result.capturedFingers)) {
-            result.capturedFingers.forEach(finger => {
-                captureResults.push({
+            console.log('=== SUCCESSFUL CAPTURES DEBUG ===');
+            console.log('Successful captures count:', result.capturedFingers.length);
+            
+            result.capturedFingers.forEach((finger, index) => {
+                console.log(`=== FINGER ${index + 1} DEBUG ===`);
+                console.log('Raw finger object:', JSON.stringify(finger, null, 2));
+                console.log('Finger type:', finger.fingerType);
+                console.log('Quality score:', finger.qualityScore);
+                console.log('Image data length:', finger.imageData ? finger.imageData.length : 'N/A');
+                console.log('WSQ data length:', finger.wsqData ? finger.wsqData.length : 'N/A');
+                console.log('Image data preview:', finger.imageData ? finger.imageData.substring(0, 100) + '...' : 'N/A');
+                console.log('WSQ data preview:', finger.wsqData ? finger.wsqData.substring(0, 100) + '...' : 'N/A');
+                
+                const captureData = {
                     fingerType: finger.fingerType || 'Unknown',
                     success: true,
                     qualityScore: finger.qualityScore || 0,
+                    quality: finger.qualityScore || 0,
                     captureTime: finger.captureTime || new Date().toISOString(),
-                    wsqData: finger.wsqData || null
-                });
+                    wsqData: finger.wsqData || null,
+                    imageData: finger.imageData || null
+                };
+                
+                console.log('Processed capture data:', captureData);
+                captureResults.push(captureData);
             });
         }
         
-        // Handle failed captures
-        if (result.failedFingers && Array.isArray(result.failedFingers)) {
-            result.failedFingers.forEach(finger => {
-                captureResults.push({
-                    fingerType: finger.fingerType || 'Unknown',
-                    success: false,
-                    error: finger.error || 'Unknown error',
-                    retryCount: finger.retryCount || 0
-                });
-            });
-        }
+        // Skip failed captures display as requested by user
         
         // Handle case where response has different structure
         if (!result.capturedFingers && !result.failedFingers) {
@@ -635,17 +654,13 @@ function processCaptureResults(result) {
                             fingerType: finger.fingerType || 'Unknown',
                             success: true,
                             qualityScore: finger.qualityScore || 0,
+                            quality: finger.qualityScore || 0,
                             captureTime: finger.captureTime || new Date().toISOString(),
-                            wsqData: finger.wsqData || null
-                        });
-                    } else {
-                        captureResults.push({
-                            fingerType: finger.fingerType || 'Unknown',
-                            success: false,
-                            error: finger.error || 'Unknown error',
-                            retryCount: finger.retryCount || 0
+                            wsqData: finger.wsqData || null,
+                            imageData: finger.imageData || null
                         });
                     }
+                    // Skip failed captures display as requested by user
                 });
             }
         }
@@ -653,8 +668,11 @@ function processCaptureResults(result) {
         // Store results
         storeResults();
         
-        // Update display
-        displayCaptureResults();
+        // Show fingerprint preview
+        const successfulCaptures = captureResults.filter(r => r.success);
+        if (window.showFingerprintPreview && successfulCaptures.length > 0) {
+            window.showFingerprintPreview(successfulCaptures);
+        }
         
         // Update AFIS form validation
         validateAfisForm();
@@ -684,64 +702,7 @@ function processCaptureResults(result) {
 /**
  * Display capture results
  */
-function displayCaptureResults() {
-    const resultsContainer = document.getElementById('captureResults');
-    
-    // Defensive check to prevent null reference errors
-    if (!resultsContainer) {
-        console.error('Capture results container not found');
-        return;
-    }
-    
-    if (captureResults.length === 0) {
-        resultsContainer.innerHTML = '<p class="text-muted">No capture results yet. Start a capture to see results here.</p>';
-        return;
-    }
-    
-    try {
-        let html = '';
-        captureResults.forEach((result, index) => {
-            const statusClass = result.success ? 'success' : 'error';
-            const statusText = result.success ? 'Success' : 'Failed';
-            const statusIcon = result.success ? 'fa-check-circle' : 'fa-times-circle';
-            
-            html += `
-                <div class="capture-result-item ${statusClass} fade-in">
-                    <div class="result-header">
-                        <span class="result-finger">${result.fingerType || 'Unknown'}</span>
-                        <span class="result-status ${statusClass}">
-                            <i class="fas ${statusIcon}"></i> ${statusText}
-                        </span>
-                    </div>
-                    <div class="result-details">
-            `;
-            
-            if (result.success) {
-                html += `
-                    <p><strong>Quality Score:</strong> <span class="quality-score">${result.qualityScore || 0}%</span></p>
-                    <p><strong>Capture Time:</strong> ${result.captureTime || 'N/A'}</p>
-                    <p><strong>WSQ Data:</strong> ${result.wsqData ? 'Available' : 'Not available'}</p>
-                `;
-            } else {
-                html += `
-                    <p><strong>Error:</strong> <span class="text-danger fw-bold">${result.error || 'Unknown error'}</span></p>
-                    <p><strong>Retry Count:</strong> ${result.retryCount || 0}</p>
-                `;
-            }
-            
-            html += `
-                    </div>
-                </div>
-            `;
-        });
-        
-        resultsContainer.innerHTML = html;
-        
-    } catch (error) {
-        console.error('Error displaying capture results:', error);
-        resultsContainer.innerHTML = '<p class="text-danger">Error displaying capture results: ' + error.message + '</p>';
-    }
-}
+// Capture results display removed as requested by user
 
 /**
  * Store results in localStorage
@@ -755,14 +716,42 @@ function storeResults() {
 }
 
 /**
+ * Clear old results to start fresh
+ */
+function clearOldResults() {
+    console.log('=== CLEAR OLD RESULTS DEBUG ===');
+    console.log('Current captureResults before clearing:', captureResults);
+    console.log('Number of results before clearing:', captureResults.length);
+    
+    // Clear the current session results
+    captureResults = [];
+    
+    // Clear localStorage to start fresh
+    localStorage.removeItem('fingerprintCaptureResults');
+    
+    console.log('Results cleared. Current captureResults:', captureResults);
+    console.log('localStorage cleared');
+}
+
+/**
  * Load stored results from localStorage
  */
 function loadStoredResults() {
     try {
         const stored = localStorage.getItem('fingerprintCaptureResults');
+        console.log('=== LOAD STORED RESULTS DEBUG ===');
+        console.log('Stored data from localStorage:', stored);
+        
         if (stored) {
-            captureResults = JSON.parse(stored);
-            displayCaptureResults();
+            const parsedResults = JSON.parse(stored);
+            console.log('Parsed stored results:', parsedResults);
+            console.log('Number of stored results:', parsedResults.length);
+            
+            // Clear current results and load stored ones
+            captureResults = parsedResults;
+            console.log('Current captureResults after loading:', captureResults);
+        } else {
+            console.log('No stored results found in localStorage');
         }
     } catch (error) {
         console.error('Error loading stored results:', error);
@@ -977,3 +966,171 @@ function updateCaptureProgress(progress, status) {
 
 // Initialize WebSocket when page loads
 setTimeout(initializeWebSocket, 1000);
+
+// Export functions to global scope for use in HTML onclick handlers
+window.captureFingerprints = startCapture;
+window.clearSelection = function() {
+    document.querySelectorAll('.finger-checkbox:checked').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateStartCaptureButton();
+};
+window.checkDeviceStatus = checkDeviceStatus;
+window.connectDevice = connectDevice;
+window.disconnectDevice = disconnectDevice;
+
+// Add quality threshold update function
+window.updateQualityDisplay = function() {
+    const slider = document.getElementById('qualityThreshold');
+    const display = document.getElementById('qualityValue');
+    
+    if (slider && display) {
+        display.textContent = slider.value;
+    }
+};
+
+// Initialize quality display when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const qualitySlider = document.getElementById('qualityThreshold');
+    if (qualitySlider) {
+        qualitySlider.addEventListener('input', updateQualityDisplay);
+        updateQualityDisplay(); // Set initial value
+    }
+});
+
+// Add fingerprint preview functionality
+window.showFingerprintPreview = function(fingerprints) {
+    console.log('=== SHOW FINGERPRINT PREVIEW DEBUG ===');
+    console.log('Fingerprints to display:', fingerprints);
+    console.log('Number of fingerprints:', fingerprints.length);
+    console.log('Fingerprints type:', typeof fingerprints);
+    console.log('Fingerprints isArray:', Array.isArray(fingerprints));
+    
+    const previewContainer = document.getElementById('previewContainer');
+    const fingerprintPreview = document.getElementById('fingerprintPreview');
+    
+    console.log('Preview container found:', !!previewContainer);
+    console.log('Fingerprint preview element found:', !!fingerprintPreview);
+    
+    if (!previewContainer || !fingerprintPreview) return;
+    
+    if (fingerprints && fingerprints.length > 0) {
+        let html = '<div class="row">';
+        fingerprints.forEach((fingerprint, index) => {
+            html += `
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">${fingerprint.fingerType}</h6>
+                            <div class="fingerprint-preview">
+                                ${fingerprint.imageData && fingerprint.imageData !== 'SimulatedImageData' 
+                                    ? `<img src="data:image/png;base64,${fingerprint.imageData}" 
+                                           class="img-fluid" style="max-height: 150px; border: 1px solid #ddd;" 
+                                           alt="Fingerprint ${fingerprint.fingerType}">`
+                                    : `<div class="bg-light border rounded d-flex align-items-center justify-content-center" 
+                                           style="height: 150px; width: 150px; margin: 0 auto;">
+                                           <i class="fas fa-fingerprint fa-2x text-muted"></i>
+                                       </div>`
+                                }
+                            </div>
+                            
+                            <!-- File Info and Download Options -->
+                            ${fingerprint.imageData && fingerprint.imageData !== 'SimulatedImageData' 
+                                ? `<div class="mt-2">
+                                     <div class="d-flex justify-content-between align-items-center mb-1">
+                                       <small class="text-muted">Image Size: ${formatFileSize(fingerprint.imageData)}</small>
+                                       <button class="btn btn-sm btn-outline-primary" 
+                                               onclick="downloadImage('${fingerprint.fingerType}', '${fingerprint.imageData}')">
+                                         <i class="fas fa-download me-1"></i>Download PNG
+                                       </button>
+                                     </div>
+                                   </div>`
+                                : ''
+                            }
+                            
+                            ${fingerprint.wsqData && fingerprint.wsqData !== 'SimulatedWsqData' 
+                                ? `<div class="mt-2">
+                                     <div class="d-flex justify-content-between align-items-center">
+                                       <small class="text-muted">WSQ Size: ${formatFileSize(fingerprint.wsqData)}</small>
+                                       <button class="btn btn-sm btn-outline-success" 
+                                               onclick="downloadWSQ('${fingerprint.fingerType}', '${fingerprint.wsqData}')">
+                                         <i class="fas fa-download me-1"></i>Download WSQ
+                                       </button>
+                                     </div>
+                                   </div>`
+                                : ''
+                            }
+                            <small class="text-muted">Quality: ${fingerprint.quality || 'N/A'}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        previewContainer.innerHTML = html;
+        fingerprintPreview.style.display = 'block';
+    } else {
+        fingerprintPreview.style.display = 'none';
+    }
+}
+
+// Utility function to format file size
+function formatFileSize(base64String) {
+    try {
+        // Calculate the actual byte size of the base64 data
+        const base64Length = base64String.length;
+        const padding = (base64String.match(/=/g) || []).length;
+        const actualSize = (base64Length * 3) / 4 - padding;
+        
+        if (actualSize < 1024) {
+            return actualSize + ' B';
+        } else if (actualSize < 1024 * 1024) {
+            return (actualSize / 1024).toFixed(1) + ' KB';
+        } else {
+            return (actualSize / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+    } catch (error) {
+        console.error('Error calculating file size:', error);
+        return 'Unknown';
+    }
+}
+
+// Download image as PNG file
+function downloadImage(fingerType, base64Data) {
+    try {
+        const link = document.createElement('a');
+        link.href = 'data:image/png;base64,' + base64Data;
+        link.download = `fingerprint_${fingerType}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showNotification(`Downloaded ${fingerType} fingerprint image`, 'success');
+    } catch (error) {
+        console.error('Error downloading image:', error);
+        showNotification('Error downloading image', 'error');
+    }
+}
+
+// Download WSQ data as file
+function downloadWSQ(fingerType, base64Data) {
+    try {
+        const link = document.createElement('a');
+        link.href = 'data:application/octet-stream;base64,' + base64Data;
+        link.download = `fingerprint_${fingerType}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.wsq`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showNotification(`Downloaded ${fingerType} WSQ data`, 'success');
+    } catch (error) {
+        console.error('Error downloading WSQ:', error);
+        showNotification('Error downloading WSQ data', 'error');
+    }
+}
+
+// Expose functions to global scope
+window.formatFileSize = formatFileSize;
+window.downloadImage = downloadImage;
+window.downloadWSQ = downloadWSQ;;

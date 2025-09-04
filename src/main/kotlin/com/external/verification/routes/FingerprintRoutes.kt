@@ -35,8 +35,10 @@ fun Route.fingerprintRoutes(fingerprintDeviceService: FingerprintDeviceService) 
                 
             } catch (e: Exception) {
                 logger.error(e) { "Error in device connection" }
-                call.respond(HttpStatusCode.InternalServerError, mapOf(
-                    "error" to "Device connection failed: ${e.message}"
+                call.respond(HttpStatusCode.InternalServerError, DeviceConnectionResponse(
+                    success = false,
+                    deviceInfo = null,
+                    error = "Device connection failed: ${e.message}"
                 ))
             }
         }
@@ -45,20 +47,22 @@ fun Route.fingerprintRoutes(fingerprintDeviceService: FingerprintDeviceService) 
             try {
                 val success = fingerprintDeviceService.disconnectDevice()
                 if (success) {
-                    call.respond(HttpStatusCode.OK, mapOf(
-                        "success" to true,
-                        "message" to "Device disconnected successfully"
+                    call.respond(HttpStatusCode.OK, DeviceStatusResponse(
+                        success = true,
+                        message = "Device disconnected successfully"
                     ))
                 } else {
-                    call.respond(HttpStatusCode.InternalServerError, mapOf(
-                        "error" to "Failed to disconnect device"
+                    call.respond(HttpStatusCode.InternalServerError, DeviceStatusResponse(
+                        success = false,
+                        message = "Failed to disconnect device"
                     ))
                 }
                 
             } catch (e: Exception) {
                 logger.error(e) { "Error in device disconnection" }
-                call.respond(HttpStatusCode.InternalServerError, mapOf(
-                    "error" to "Device disconnection failed: ${e.message}"
+                call.respond(HttpStatusCode.InternalServerError, DeviceStatusResponse(
+                    success = false,
+                    message = "Device disconnection failed: ${e.message}"
                 ))
             }
         }

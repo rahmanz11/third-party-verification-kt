@@ -222,35 +222,13 @@ fun Route.webRoutes(
             return@get
         }
         
-        call.respond(FreeMarkerContent("afis-verification.ftl", mapOf(
+        call.respond(FreeMarkerContent("afis-verification-simple.ftl", mapOf(
             "title" to "AFIS Verification - Verification System",
             "username" to username,
             "thirdPartyUsername" to thirdPartyUsername
         )))
     }
 
-    get("/fingerprint-capture") {
-        val username = call.request.queryParameters["username"] ?: ""
-        val thirdPartyUsername = call.request.queryParameters["thirdPartyUsername"] ?: username
-        
-        if (username.isBlank() || thirdPartyUsername.isBlank()) {
-            call.respondRedirect("/")
-            return@get
-        }
-        
-        val isValidSession = kotlinx.coroutines.runBlocking { basicAuthSessionService.isValidSession(username) }
-        
-        if (!isValidSession) {
-            call.respondRedirect("/")
-            return@get
-        }
-        
-        call.respond(FreeMarkerContent("fingerprint-capture.ftl", mapOf(
-            "title" to "Fingerprint Capture - Verification System",
-            "username" to username,
-            "thirdPartyUsername" to thirdPartyUsername
-        )))
-    }
 
     get("/verification-form") {
         val username = call.request.queryParameters["username"] ?: ""
@@ -321,19 +299,26 @@ fun Route.webRoutes(
         }
         
         try {
-            // Temporarily skip JWT check to allow form submission
-            // TODO: Re-enable JWT validation when third-party login is working
+            // Get valid JWT token for third-party API authentication
             val jwt = jwtStorageService.getValidJwt(username)
-            // TODO:: uncomment after testing
-            /*
+            
             if (jwt == null) {
-                call.respondRedirect("/third-party-login?username=$username")
+                // Check if this is an AJAX request
+                val isAjax = call.request.headers["X-Requested-With"] == "XMLHttpRequest"
+                
+                if (isAjax) {
+                    call.respond(HttpStatusCode.OK, mapOf(
+                        "success" to false,
+                        "error" to "Third-party authentication required. Please login to third-party service first.",
+                        "redirect" to "/third-party-login?username=$username"
+                    ))
+                } else {
+                    call.respondRedirect("/third-party-login?username=$username")
+                }
                 return@post
             }
-            */
-            // TODO:: remove effectiveJwt after testing
-            // For now, use a placeholder JWT or handle missing JWT gracefully
-            val effectiveJwt = jwt ?: "placeholder_jwt_for_testing"
+            
+            val effectiveJwt = jwt
             
             val verificationRequest = com.external.verification.models.VerificationRequest(
                 identify = com.external.verification.models.VerificationRequest.Identify(
@@ -447,7 +432,11 @@ fun Route.webRoutes(
         val isJwtValid = jwtStorageService.isJwtValid(thirdPartyUsername)
         val storedUsernames = jwtStorageService.getStoredUsernames()
         
-        // Get expiration time if JWT exists
+        // Get JWT token and expiration time if valid
+        val jwt = if (isJwtValid) {
+            jwtStorageService.getValidJwt(thirdPartyUsername)
+        } else null
+        
         val expiresAt = if (isJwtValid) {
             val storedJwt = jwtStorageService.getStoredJwt(thirdPartyUsername)
             storedJwt?.expiresAt?.toString()
@@ -459,7 +448,8 @@ fun Route.webRoutes(
             thirdPartyUsername = thirdPartyUsername,
             hasStoredJwt = storedUsernames.contains(thirdPartyUsername),
             storedUsernames = storedUsernames,
-            expiresAt = expiresAt
+            expiresAt = expiresAt,
+            jwt = jwt
         )
         
         call.respond(HttpStatusCode.OK, response)

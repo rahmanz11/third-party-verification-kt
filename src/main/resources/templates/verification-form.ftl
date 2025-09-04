@@ -423,7 +423,12 @@
                     <form id="modalLoginForm">
                         <input type="hidden" name="username" value="${username}">
                         
-
+                        <div class="mb-3">
+                            <label for="modalThirdPartyUsername" class="form-label">
+                                <i class="fas fa-user me-2"></i>Third Party Username
+                            </label>
+                            <input type="text" class="form-control" id="modalThirdPartyUsername" name="thirdPartyUsername" required>
+                        </div>
                         
                         <div class="mb-4">
                             <label for="modalThirdPartyPassword" class="form-label">

@@ -67,7 +67,8 @@ data class JwtStatusResponse(
     val thirdPartyUsername: String,
     val hasStoredJwt: Boolean,
     val storedUsernames: List<String>,
-    val expiresAt: String? = null
+    val expiresAt: String? = null,
+    val jwt: String? = null
 )
 
 @Serializable

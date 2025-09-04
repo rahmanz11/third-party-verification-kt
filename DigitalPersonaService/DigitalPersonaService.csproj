@@ -10,7 +10,6 @@
   </PropertyGroup>
 
       <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
@@ -19,18 +18,24 @@
         <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     </ItemGroup>
 
-  <!-- TODO: Add Digital Persona .NET SDK references when COM interop is configured -->
+  <!-- Digital Persona .NET SDK References - Requires .NET Framework -->
   <!-- 
   <ItemGroup>
-    <COMReference Include="DPFPDevNET">
-      <WrapperTool>tlbimp</WrapperTool>
-      <VersionMinor>0</VersionMinor>
-      <VersionMajor>1</VersionMajor>
-      <Guid>a0c5d4c0-8b1a-11d3-9fb8-00105a0f4b8a</Guid>
-      <Lcid>0</Lcid>
-      <Isolated>false</Isolated>
-      <EmbedInteropTypes>false</EmbedInteropTypes>
-    </COMReference>
+    <Reference Include="DPFPDevNET">
+      <HintPath>SDK\Bin\DPFPDevNET.dll</HintPath>
+    </Reference>
+    <Reference Include="DPFPEngNET">
+      <HintPath>SDK\Bin\DPFPEngNET.dll</HintPath>
+    </Reference>
+    <Reference Include="DPFPGuiNET">
+      <HintPath>SDK\Bin\DPFPGuiNET.dll</HintPath>
+    </Reference>
+    <Reference Include="DPFPShrNET">
+      <HintPath>SDK\Bin\DPFPShrNET.dll</HintPath>
+    </Reference>
+    <Reference Include="DPFPVerNET">
+      <HintPath>SDK\Bin\DPFPVerNET.dll</HintPath>
+    </Reference>
   </ItemGroup>
   -->
 

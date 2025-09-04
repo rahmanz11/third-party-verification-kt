@@ -7,7 +7,7 @@
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/css/all.min.css" rel="stylesheet">
     <link href="/static/css/dashboard.css" rel="stylesheet">
-    <link href="/static/css/afis-verification.css" rel="stylesheet">
+    <!-- <link href="/static/css/afis-verification.css" rel="stylesheet"> -->
     <style>
         .fingerprint-capture-section {
             background: #f8f9fa;
@@ -141,7 +141,7 @@
                 <a class="btn btn-outline-primary btn-sm me-2" href="/dashboard?username=${username}">
                     <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                 </a>
-                <a class="btn btn-outline-danger btn-sm" href="/logout?username=${username}&thirdPartyUsername=${thirdPartyUsername!username}">
+                <a class="btn btn-outline-danger btn-sm" href="/logout?username=${username}&thirdPartyUsername=${thirdPartyUsername}">
                     <i class="fas fa-sign-out-alt me-2"></i>Logout
                 </a>
             </div>
@@ -342,6 +342,9 @@
         </div>
     </div>
 
+    <!-- Include fingerprint capture functionality -->
+    <script src="/static/js/fingerprint-capture.js"></script>
+    
     <script>
         let capturedFingerprints = [];
         let currentStep = 1;

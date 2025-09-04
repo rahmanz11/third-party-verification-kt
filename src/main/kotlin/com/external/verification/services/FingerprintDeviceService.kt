@@ -140,8 +140,35 @@ class FingerprintDeviceService {
     
     @Serializable
     data class CSharpBatchCaptureRequest(
-        val fingerTypes: List<String>,
-        val qualityThreshold: Int
+        val fingers: List<String>,
+        val qualityThreshold: Int,
+        val captureTimeout: Int,
+        val retryCount: Int
+    )
+    
+    @Serializable
+    data class CSharpFingerprintCaptureResponse(
+        val success: Boolean,
+        val fingerType: String,
+        val imageData: String?,
+        val wsqData: String?,
+        val qualityScore: Int,
+        val captureTime: String,
+        val error: String?
+    )
+    
+    @Serializable
+    data class CSharpBatchCaptureResponse(
+        val success: Boolean,
+        val capturedFingers: List<CSharpFingerprintCaptureResponse>,
+        val failedFingers: List<String>,
+        val totalTime: String,
+        val error: String?
+    )
+    
+    @Serializable
+    data class CSharpDisconnectResponse(
+        val success: Boolean
     )
     
     /**
@@ -405,13 +432,14 @@ class FingerprintDeviceService {
         return try {
             val response = httpClient.post("$csharpServiceUrl/api/fingerprint/device/disconnect")
             if (response.status.isSuccess()) {
-                val result = response.body<Map<String, Boolean>>()
-                result["success"] ?: false
+                val result = response.body<CSharpDisconnectResponse>()
+                result.success
             } else {
+                logger.error { "Disconnect device failed with status: ${response.status}" }
                 false
             }
         } catch (e: Exception) {
-            logger.error(e) { "Failed to disconnect device" }
+            logger.error(e) { "Failed to disconnect device: ${e.message}" }
             false
         }
     }
@@ -544,8 +572,10 @@ class FingerprintDeviceService {
     suspend fun captureBatchFingerprints(request: BatchFingerprintCaptureRequest): BatchFingerprintCaptureResponse {
         return try {
             val requestBody = CSharpBatchCaptureRequest(
-                fingerTypes = request.fingers,
-                qualityThreshold = request.qualityThreshold
+                fingers = request.fingers,
+                qualityThreshold = request.qualityThreshold,
+                captureTimeout = request.captureTimeout,
+                retryCount = request.retryCount
             )
             
             val response = httpClient.post("$csharpServiceUrl/api/fingerprint/capture/batch") {
@@ -554,34 +584,33 @@ class FingerprintDeviceService {
             }
             
             if (response.status.isSuccess()) {
-                val batch = response.body<Map<String, Any>>()
-                if (batch["success"] == true) {
-                    val capturedFingers = (batch["capturedFingers"] as? List<Map<String, Any>>)?.map { finger ->
+                val batch = response.body<CSharpBatchCaptureResponse>()
+                if (batch.success) {
+                    val capturedFingers = batch.capturedFingers.map { finger ->
                         FingerprintCaptureResponse(
-                            success = finger["success"] as? Boolean ?: false,
-                            fingerType = finger["fingerType"] as? String ?: "",
-                            imageData = finger["imageData"] as? String,
-                            wsqData = finger["wsqData"] as? String,
-                            qualityScore = finger["qualityScore"] as? Int,
-                            captureTime = finger["captureTime"] as? String,
-                            error = finger["error"] as? String
+                            success = finger.success,
+                            fingerType = finger.fingerType,
+                            imageData = finger.imageData,
+                            wsqData = finger.wsqData,
+                            qualityScore = finger.qualityScore,
+                            captureTime = finger.captureTime,
+                            error = finger.error
                         )
-                    } ?: emptyList()
+                    }
                     
-                    val failedFingers = (batch["failedFingers"] as? List<String>)?.map { fingerType ->
+                    val failedFingers = batch.failedFingers.map { fingerType ->
                         FailedFingerCapture(
                             fingerType = fingerType,
                             error = "Capture failed",
                             retryCount = 0
                         )
-                    } ?: emptyList()
-                    val totalTime = batch["totalTime"] as? String
+                    }
                     
                     BatchFingerprintCaptureResponse(
                         success = true,
                         capturedFingers = capturedFingers,
                         failedFingers = failedFingers,
-                        totalTime = totalTime?.let { parseDuration(it) }?.toMillis(),
+                        totalTime = batch.totalTime.let { parseDuration(it) }?.toMillis(),
                         error = null
                     )
                 } else {
@@ -590,7 +619,7 @@ class FingerprintDeviceService {
                         capturedFingers = emptyList(),
                         failedFingers = emptyList(),
                         totalTime = null,
-                        error = batch["error"] as? String ?: "Unknown error"
+                        error = batch.error ?: "Unknown error"
                     )
                 }
             } else {

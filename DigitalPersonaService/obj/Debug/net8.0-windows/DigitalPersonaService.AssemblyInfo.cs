@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DigitalPersonaService")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5ee3bc639e81ad011b4b616ba5b667ca3430953a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+20ca074d26561d1c86ef377499f3c8ab104558f3")]
 [assembly: System.Reflection.AssemblyProductAttribute("DigitalPersonaService")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DigitalPersonaService")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
