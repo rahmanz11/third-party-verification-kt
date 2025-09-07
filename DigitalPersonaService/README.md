@@ -1,62 +1,78 @@
 # Digital Persona Fingerprint Service
 
-This is a Windows service that provides fingerprint scanner integration using the Digital Persona .NET SDK. It exposes a REST API that can be consumed by other applications (like the Kotlin verification service) to perform fingerprint operations.
+A Windows service that provides HTTP API access to Digital Persona fingerprint scanner functionality.
+
+## Overview
+
+This service acts as a bridge between the Kotlin verification application and Digital Persona fingerprint scanners, providing a REST API for fingerprint capture operations.
 
 ## Features
 
-- **Device Management**: Connect/disconnect to fingerprint scanners
-- **Fingerprint Capture**: Single and batch fingerprint capture
-- **Quality Assessment**: Automatic quality evaluation of captured fingerprints
-- **WSQ Conversion**: Convert captured images to WSQ format for AFIS compatibility
-- **REST API**: HTTP endpoints for easy integration
-- **Windows Service**: Runs as a background service with automatic startup
+- **HTTP API**: RESTful endpoints for fingerprint operations
+- **Windows Service**: Runs as a Windows service with automatic startup
+- **Device Management**: Automatic detection and connection to fingerprint scanners
+- **Quality Assessment**: Fingerprint quality evaluation
+- **Batch Operations**: Capture multiple fingerprints in sequence
+- **Comprehensive Logging**: Detailed logging with Serilog
 
 ## Prerequisites
 
-1. **Windows 10/11** (64-bit)
-2. **.NET 8.0 Runtime** or **.NET 8.0 SDK**
-3. **Digital Persona One Touch for Windows SDK** installed
-4. **Administrator privileges** for service installation
+### System Requirements
+- **Windows 10/11** (64-bit)
+- **.NET 8.0 Runtime** or **.NET 8.0 SDK**
+- **Digital Persona One Touch for Windows SDK** installed
+- **Administrator privileges** for service installation
 
-## Installation
+### SDK Installation
+1. Install Digital Persona SDK from the official source
+2. Verify installation in `C:\Program Files\DigitalPersona`
+3. Copy required DLL files to the `SDK\Bin\` directory
+
+## Quick Start
 
 ### 1. Build the Service
-
 ```bash
 cd DigitalPersonaService
 dotnet build -c Release
 ```
 
 ### 2. Install as Windows Service
-
-Run the installation script as administrator:
-
 ```bash
+# Run as administrator
 install-service.bat
 ```
 
-Or manually install using:
-
+### 3. Test the API
 ```bash
-# Install the service
-sc create "DigitalPersonaFingerprintService" binPath="C:\path\to\DigitalPersonaService.exe" start=auto DisplayName="Digital Persona Fingerprint Service"
+# Health check
+curl http://localhost:5001/api/fingerprint/health
 
-# Start the service
-sc start "DigitalPersonaFingerprintService"
+# Device status
+curl http://localhost:5001/api/fingerprint/device/status
 ```
 
-### 3. Verify Installation
+## API Endpoints
 
-Check service status:
+### Health and Status
+- `GET /api/fingerprint/health` - Service health check
+- `GET /api/fingerprint/device/status` - Device connection status
+- `GET /api/fingerprint/sdk/version` - SDK version information
 
-```bash
-sc query "DigitalPersonaFingerprintService"
-```
+### Device Management
+- `POST /api/fingerprint/device/connect` - Connect to fingerprint device
+- `POST /api/fingerprint/device/disconnect` - Disconnect from device
+
+### Fingerprint Capture
+- `POST /api/fingerprint/capture` - Capture single fingerprint
+- `POST /api/fingerprint/capture/batch` - Batch capture multiple fingers
+- `POST /api/fingerprint/capture/{type}/cancel` - Cancel active capture
+
+### Quality Assessment
+- `POST /api/fingerprint/quality/assess` - Assess fingerprint quality
 
 ## Configuration
 
-The service configuration is in `appsettings.json`:
-
+### appsettings.json
 ```json
 {
   "ServiceSettings": {
@@ -66,126 +82,130 @@ The service configuration is in `appsettings.json`:
   "DigitalPersona": {
     "SDKPath": "C:\\Program Files\\DigitalPersona",
     "DeviceTimeout": 30000,
-    "QualityThreshold": 70
+    "QualityThreshold": 70,
+    "MaxRetries": 3,
+    "CaptureTimeout": 60000
   }
 }
 ```
 
-## API Endpoints
+## Development
 
-### Health Check
-```
-GET /api/fingerprint/health
-```
-
-### Device Management
-```
-GET  /api/fingerprint/device/status      - Get device status
-POST /api/fingerprint/device/connect     - Connect to device
-POST /api/fingerprint/device/disconnect  - Disconnect from device
-```
-
-### Fingerprint Capture
-```
-POST /api/fingerprint/capture             - Capture single fingerprint
-POST /api/fingerprint/capture/batch       - Batch capture multiple fingers
-POST /api/fingerprint/capture/{type}/cancel - Cancel active capture
-```
-
-### Quality & Utilities
-```
-POST /api/fingerprint/quality/assess     - Assess fingerprint quality
-GET  /api/fingerprint/sdk/version        - Get SDK version
-```
-
-## Usage Examples
-
-### Connect to Device
-```bash
-curl -X POST http://localhost:5001/api/fingerprint/device/connect
-```
-
-### Capture Fingerprint
-```bash
-curl -X POST http://localhost:5001/api/fingerprint/capture \
-  -H "Content-Type: application/json" \
-  -d '{
-    "fingerType": "LEFT_THUMB",
-    "qualityThreshold": 70,
-    "timeoutMs": 30000,
-    "convertToWsq": true
-  }'
-```
-
-### Batch Capture
-```bash
-curl -X POST http://localhost:5001/api/fingerprint/capture/batch \
-  -H "Content-Type: application/json" \
-  -d '{
-    "fingerTypes": ["LEFT_THUMB", "RIGHT_THUMB", "LEFT_INDEX"],
-    "qualityThreshold": 70,
-    "timeoutMs": 60000
-  }'
-```
-
-## Integration with Kotlin Service
-
-The Kotlin application can communicate with this service via HTTP calls. Update the `FingerprintDeviceService.kt` to make HTTP requests to the C# service instead of trying to use the Java SDK directly.
-
-## Troubleshooting
-
-### Service Won't Start
-1. Check Windows Event Viewer for error messages
-2. Verify .NET 8.0 is installed
-3. Ensure Digital Persona SDK is properly installed
-4. Check if port 5001 is available
-
-### Device Connection Issues
-1. Verify fingerprint scanner is connected and powered on
-2. Check device drivers are installed
-3. Ensure Digital Persona SDK is accessible
-4. Review service logs
-
-### Build Errors
-1. Ensure .NET 8.0 SDK is installed
-2. Check all NuGet packages are restored
-3. Verify project file syntax
-
-## Development Mode
-
-Run the service in console mode for development:
-
+### Running in Development Mode
 ```bash
 dotnet run -- --console
 ```
 
-This will start the service as a console application instead of a Windows service.
+### Building for Production
+```bash
+dotnet build -c Release
+dotnet publish -c Release -o publish
+```
 
-## Logging
+## Service Management
 
-Logs are written to:
-- **Console**: When running in console mode
-- **Windows Event Log**: When running as a service
-- **File**: Configured in `appsettings.json`
+### Windows Service Commands
+```bash
+# Check service status
+sc query "DigitalPersonaFingerprintService"
+
+# Start service
+sc start "DigitalPersonaFingerprintService"
+
+# Stop service
+sc stop "DigitalPersonaFingerprintService"
+
+# Remove service
+sc delete "DigitalPersonaFingerprintService"
+```
+
+### Logs
+- **Console**: Real-time logging when running in console mode
+- **File**: `logs/digitalpersona-service-YYYY-MM-DD.log`
+- **Event Log**: Windows Event Viewer under "DigitalPersonaFingerprintService"
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. Service Won't Start
+- Check .NET 8.0 installation
+- Verify port 5001 is not in use
+- Check Windows Event Viewer for error messages
+- Ensure Digital Persona SDK is properly installed
+
+#### 2. Device Connection Issues
+- Verify fingerprint scanner is connected and powered
+- Check device drivers are installed
+- Ensure SDK path in configuration is correct
+- Check service has access to device (run as administrator)
+
+#### 3. API Communication Issues
+- Verify service is running on port 5001
+- Check firewall settings
+- Test with curl or Postman
+- Review service logs for errors
+
+### Debug Mode
+Enable debug logging in `appsettings.json`:
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "DigitalPersonaService": "Debug"
+    }
+  }
+}
+```
 
 ## Security Considerations
 
-- The service runs with local system privileges
-- API endpoints are not authenticated by default
-- Consider adding authentication for production use
-- Restrict network access if needed
+### Current Implementation
+- **Local Only**: Service runs on localhost only
+- **No Authentication**: API endpoints are not authenticated
+- **System Privileges**: Service runs with local system privileges
+
+### Production Recommendations
+- **Add Authentication**: Implement API key or JWT authentication
+- **Network Security**: Restrict access to authorized networks only
+- **Audit Logging**: Log all fingerprint operations for compliance
+- **Data Encryption**: Encrypt sensitive data in transit and at rest
+
+## Performance Optimization
+
+### Current Optimizations
+- **Async Operations**: Non-blocking async/await operations
+- **Connection Pooling**: Efficient HTTP client usage
+- **Timeout Management**: Configurable timeouts for different operations
+- **Error Handling**: Graceful degradation and retry logic
+
+### Future Enhancements
+- **Caching**: Cache device status and SDK information
+- **Batch Operations**: Optimize batch fingerprint capture
+- **Connection Persistence**: Maintain persistent device connections
+- **Load Balancing**: Support for multiple fingerprint devices
+
+## Integration with Kotlin Application
+
+The Kotlin application communicates with this service via HTTP API. The `FingerprintDeviceService.kt` has been updated to:
+
+1. **Make HTTP Requests**: Uses Ktor HTTP client for API communication
+2. **Handle Async Operations**: All methods are suspend functions
+3. **Map Responses**: Converts C# service responses to Kotlin models
+4. **Provide Fallbacks**: Graceful degradation when service is unavailable
 
 ## Support
 
-For issues related to:
-- **Service installation**: Check Windows Event Viewer and service logs
-- **Device connectivity**: Verify Digital Persona SDK installation
-- **API integration**: Review HTTP response codes and error messages
+### Documentation
+- **API Reference**: Service endpoints and request/response formats
+- **Integration Guide**: Kotlin application integration
+- **Troubleshooting**: Common issues and solutions
 
-## Next Steps
+### Development Resources
+- **Digital Persona SDK**: Official SDK documentation
+- **.NET Documentation**: Microsoft .NET development resources
+- **Serilog Documentation**: Logging framework documentation
 
-1. **Integrate Digital Persona .NET SDK**: Add actual SDK references and implementation
-2. **Add authentication**: Implement API key or JWT authentication
-3. **Enhanced error handling**: Add retry logic and better error reporting
-4. **Performance optimization**: Implement connection pooling and caching
-5. **Monitoring**: Add metrics collection and health monitoring
+## License
+
+This service is part of the Third-Party Verification System and follows the same licensing terms.

@@ -8,7 +8,7 @@
       "version": "1.0.0",
       "restore": {
         "projectUniqueName": "E:\\verification\\third-party-verification-kt\\DigitalPersonaService\\DigitalPersonaService.csproj",
-        "projectName": "DigitalPersonaService",
+        "projectName": "DigitalPersonaFingerprintService",
         "projectPath": "E:\\verification\\third-party-verification-kt\\DigitalPersonaService\\DigitalPersonaService.csproj",
         "packagesPath": "C:\\Users\\Zillur\\.nuget\\packages\\",
         "outputPath": "E:\\verification\\third-party-verification-kt\\DigitalPersonaService\\obj\\",
@@ -50,29 +50,29 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "dependencies": {
+            "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
             "Microsoft.Extensions.Hosting.WindowsServices": {
               "target": "Package",
               "version": "[8.0.0, )"
             },
-            "Microsoft.Extensions.Logging": {
+            "Serilog.AspNetCore": {
               "target": "Package",
               "version": "[8.0.0, )"
             },
-            "Microsoft.Extensions.Logging.Console": {
+            "Serilog.Sinks.EventLog": {
               "target": "Package",
-              "version": "[8.0.0, )"
+              "version": "[3.0.36, )"
             },
-            "Microsoft.Extensions.Logging.Debug": {
+            "Serilog.Sinks.File": {
               "target": "Package",
-              "version": "[8.0.0, )"
+              "version": "[5.0.0, )"
             },
-            "Microsoft.Extensions.Logging.EventLog": {
+            "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[8.0.0, )"
-            },
-            "System.Drawing.Common": {
-              "target": "Package",
-              "version": "[8.0.0, )"
+              "version": "[6.4.0, )"
             }
           },
           "imports": [
@@ -93,7 +93,7 @@
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             },
-            "Microsoft.WindowsDesktop.App": {
+            "Microsoft.WindowsDesktop.App.WindowsForms": {
               "privateAssets": "none"
             }
           },

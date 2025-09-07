@@ -1,66 +1,78 @@
-using System;
-using System.ServiceProcess;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
+using DigitalPersonaService.Services;
+using DigitalPersonaService.Models;
+using Serilog;
 
-namespace DigitalPersonaService
+var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File("logs/digitalpersona-service-.log", rollingInterval: RollingInterval.Day)
+    .WriteTo.EventLog("DigitalPersonaFingerprintService", manageEventSource: true)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+// Add services to the container
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Add CORS
+builder.Services.AddCors(options =>
 {
-    public class Program
+    options.AddPolicy("AllowAll", policy =>
     {
-        public static async Task Main(string[] args)
-        {
-            var host = CreateHostBuilder(args).Build();
-            
-            if (args.Length > 0 && args[0] == "--console")
-            {
-                // Run as console app for development
-                await host.RunAsync();
-            }
-            else
-            {
-                // Run as Windows service
-                using (var service = new DigitalPersonaWindowsService(host))
-                {
-                    ServiceBase.Run(service);
-                }
-            }
-        }
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                    webBuilder.UseUrls("http://localhost:5001");
-                })
-                .UseWindowsService();
-    }
+// Add logging
+builder.Services.AddLogging();
 
-    public class DigitalPersonaWindowsService : ServiceBase
-    {
-        private readonly IHost _host;
-        private IWebHost _webHost;
+// Add fingerprint service
+builder.Services.AddSingleton<FingerprintService>();
+builder.Services.AddSingleton<DeviceManager>();
 
-        public DigitalPersonaWindowsService(IHost host)
-        {
-            _host = host;
-            ServiceName = "DigitalPersonaFingerprintService";
-        }
+// Configure as Windows Service
+builder.Services.AddWindowsService(options =>
+{
+    options.ServiceName = "DigitalPersonaFingerprintService";
+});
 
-        protected override void OnStart(string[] args)
-        {
-            _webHost = _host.Services.GetRequiredService<IWebHost>();
-            _webHost.Start();
-        }
+var app = builder.Build();
 
-        protected override void OnStop()
-        {
-            _webHost?.StopAsync().Wait();
-        }
-    }
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseCors("AllowAll");
+app.UseRouting();
+app.MapControllers();
+
+// Initialize fingerprint service
+var fingerprintService = app.Services.GetRequiredService<FingerprintService>();
+await fingerprintService.InitializeAsync();
+
+Log.Information("Digital Persona Fingerprint Service started on port {Port}", 
+    builder.Configuration["ServiceSettings:Port"] ?? "5001");
+
+try
+{
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
 }

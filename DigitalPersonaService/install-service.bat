@@ -1,55 +1,123 @@
 @echo off
-echo Digital Persona Fingerprint Service Installation
-echo ===============================================
+echo ========================================
+echo   Digital Persona Service Installation
+echo ========================================
+echo.
 
 REM Check if running as administrator
 net session >nul 2>&1
 if %errorLevel% == 0 (
-    echo Running as administrator - proceeding with installation
+    echo ✓ Running as administrator
 ) else (
-    echo ERROR: This script must be run as administrator
-    echo Right-click and select "Run as administrator"
+    echo ✗ ERROR: This script must be run as administrator
+    echo   Right-click and select "Run as administrator"
+    echo.
     pause
     exit /b 1
 )
+
+echo.
+echo Step 1: Stopping existing service (if any)...
+echo.
+
+REM Stop and remove existing service
+sc query "DigitalPersonaFingerprintService" >nul 2>&1
+if %errorLevel% == 0 (
+    echo Stopping existing service...
+    sc stop "DigitalPersonaFingerprintService" >nul 2>&1
+    timeout /t 3 >nul
+    
+    echo Removing existing service...
+    sc delete "DigitalPersonaFingerprintService" >nul 2>&1
+    timeout /t 2 >nul
+    echo ✓ Existing service removed
+) else (
+    echo ✓ No existing service found
+)
+
+echo.
+echo Step 2: Building the service...
+echo.
 
 REM Build the service
-echo Building the service...
 dotnet build -c Release
-
 if %errorLevel% neq 0 (
-    echo ERROR: Build failed
+    echo ✗ ERROR: Build failed
+    echo   Please check the build errors above
+    echo.
     pause
     exit /b 1
 )
 
-REM Install the service
-echo Installing the service...
-sc create "DigitalPersonaFingerprintService" binPath="%~dp0bin\Release\net8.0\DigitalPersonaService.exe" start=auto DisplayName="Digital Persona Fingerprint Service"
+echo ✓ Service built successfully
 
+echo.
+echo Step 3: Installing Windows Service...
+echo.
+
+REM Get the path to the built executable
+set "SERVICE_PATH=%~dp0bin\Release\net8.0\DigitalPersonaFingerprintService.exe"
+
+REM Install the service
+sc create "DigitalPersonaFingerprintService" binPath="%SERVICE_PATH%" start=auto DisplayName="Digital Persona Fingerprint Service"
+if %errorLevel% neq 0 (
+    echo ✗ ERROR: Failed to create service
+    echo   Please check the error message above
+    echo.
+    pause
+    exit /b 1
+)
+
+echo ✓ Service created successfully
+
+echo.
+echo Step 4: Starting the service...
+echo.
+
+REM Start the service
+sc start "DigitalPersonaFingerprintService"
+if %errorLevel% neq 0 (
+    echo ✗ ERROR: Failed to start service
+    echo   Please check the error message above
+    echo.
+    pause
+    exit /b 1
+)
+
+echo ✓ Service started successfully
+
+echo.
+echo Step 5: Verifying installation...
+echo.
+
+REM Wait a moment for the service to start
+timeout /t 3 >nul
+
+REM Check service status
+sc query "DigitalPersonaFingerprintService" | find "RUNNING" >nul
 if %errorLevel% == 0 (
-    echo Service installed successfully
-    echo Starting the service...
-    sc start "DigitalPersonaFingerprintService"
-    
-    if %errorLevel% == 0 (
-        echo Service started successfully
-        echo.
-        echo Service Status:
-        sc query "DigitalPersonaFingerprintService"
-    ) else (
-        echo ERROR: Failed to start service
-    )
+    echo ✓ Service is running
 ) else (
-    echo ERROR: Failed to install service
+    echo ⚠ WARNING: Service may not be running properly
+    echo   Check Windows Event Viewer for error messages
 )
 
 echo.
-echo Installation complete. The service will start automatically on system boot.
+echo ========================================
+echo   Installation Complete!
+echo ========================================
 echo.
-echo To manage the service, use:
-echo   sc start "DigitalPersonaFingerprintService"    - Start the service
-echo   sc stop "DigitalPersonaFingerprintService"     - Stop the service
-echo   sc delete "DigitalPersonaFingerprintService"   - Remove the service
+echo Service Name: DigitalPersonaFingerprintService
+echo Service Path: %SERVICE_PATH%
+echo API Endpoint: http://localhost:5001
+echo.
+echo Useful commands:
+echo   sc query "DigitalPersonaFingerprintService"     - Check service status
+echo   sc stop "DigitalPersonaFingerprintService"      - Stop the service
+echo   sc start "DigitalPersonaFingerprintService"     - Start the service
+echo   sc delete "DigitalPersonaFingerprintService"    - Remove the service
+echo.
+echo Test the API:
+echo   curl http://localhost:5001/api/fingerprint/health
 echo.
 pause

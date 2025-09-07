@@ -1,71 +1,232 @@
-using System;
+using System.Text.Json.Serialization;
 
-namespace DigitalPersonaService.Models
+namespace DigitalPersonaService.Models;
+
+public class ServiceHealth
 {
-    public class DeviceStatusResponse
-    {
-        public bool Connected { get; set; }
-        public string DeviceName { get; set; }
-        public string DeviceId { get; set; }
-        public string FirmwareVersion { get; set; }
-        public string Error { get; set; }
-        public DateTime Timestamp { get; set; }
-    }
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "Healthy";
+    
+    [JsonPropertyName("timestamp")]
+    public string Timestamp { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+    
+    [JsonPropertyName("sdkVersion")]
+    public string SdkVersion { get; set; } = "Unknown";
+    
+    [JsonPropertyName("deviceConnected")]
+    public bool DeviceConnected { get; set; }
+}
 
-    public class DeviceConnectionResponse
-    {
-        public bool Success { get; set; }
-        public DeviceStatusResponse DeviceInfo { get; set; }
-        public string Error { get; set; }
-    }
+public class DeviceStatus
+{
+    [JsonPropertyName("connected")]
+    public bool Connected { get; set; }
+    
+    [JsonPropertyName("deviceName")]
+    public string? DeviceName { get; set; }
+    
+    [JsonPropertyName("deviceId")]
+    public string? DeviceId { get; set; }
+    
+    [JsonPropertyName("firmwareVersion")]
+    public string? FirmwareVersion { get; set; }
+    
+    [JsonPropertyName("error")]
+    public string? Error { get; set; }
+    
+    [JsonPropertyName("timestamp")]
+    public string Timestamp { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+}
 
-    // Updated to match Kotlin FingerprintCaptureRequest
-    public class FingerprintCaptureRequest
-    {
-        public string FingerType { get; set; } // LEFT_THUMB, RIGHT_THUMB, LEFT_INDEX, etc.
-        public int QualityThreshold { get; set; } = 50;
-        public int CaptureTimeout { get; set; } = 30000; // Changed from TimeoutMs to match Kotlin
-        public int RetryCount { get; set; } = 3; // Added to match Kotlin
-    }
+public class DeviceConnection
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+    
+    [JsonPropertyName("deviceInfo")]
+    public DeviceStatus? DeviceInfo { get; set; }
+    
+    [JsonPropertyName("error")]
+    public string? Error { get; set; }
+}
 
-    public class FingerprintCaptureResponse
-    {
-        public bool Success { get; set; }
-        public string FingerType { get; set; }
-        public string ImageData { get; set; } // Base64 encoded image
-        public string WsqData { get; set; } // Base64 encoded WSQ if requested
-        public int QualityScore { get; set; }
-        public DateTime CaptureTime { get; set; }
-        public string Error { get; set; }
-    }
+public class FingerprintCapture
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+    
+    [JsonPropertyName("fingerType")]
+    public string FingerType { get; set; } = string.Empty;
+    
+    [JsonPropertyName("imageData")]
+    public string? ImageData { get; set; }
+    
+    [JsonPropertyName("wsqData")]
+    public string? WsqData { get; set; }
+    
+    [JsonPropertyName("qualityScore")]
+    public int? QualityScore { get; set; }
+    
+    [JsonPropertyName("captureTime")]
+    public string? CaptureTime { get; set; }
+    
+    [JsonPropertyName("error")]
+    public string? Error { get; set; }
+}
 
-    // Updated to match Kotlin BatchFingerprintCaptureRequest
-    public class BatchCaptureRequest
-    {
-        public string[] Fingers { get; set; } // Changed from FingerTypes to match Kotlin
-        public int QualityThreshold { get; set; } = 50;
-        public int CaptureTimeout { get; set; } = 60000; // Changed from TimeoutMs
-        public int RetryCount { get; set; } = 2; // Added to match Kotlin
-    }
+public class QualityAssessment
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+    
+    [JsonPropertyName("overallScore")]
+    public int OverallScore { get; set; }
+    
+    [JsonPropertyName("clarity")]
+    public int Clarity { get; set; }
+    
+    [JsonPropertyName("contrast")]
+    public int Contrast { get; set; }
+    
+    [JsonPropertyName("coverage")]
+    public int Coverage { get; set; }
+    
+    [JsonPropertyName("ridgeDefinition")]
+    public int RidgeDefinition { get; set; }
+    
+    [JsonPropertyName("isAcceptable")]
+    public bool IsAcceptable { get; set; }
+    
+    [JsonPropertyName("error")]
+    public string? Error { get; set; }
+}
 
-    public class BatchCaptureResponse
-    {
-        public bool Success { get; set; }
-        public FingerprintCaptureResponse[] CapturedFingers { get; set; }
-        public string[] FailedFingers { get; set; }
-        public TimeSpan TotalTime { get; set; }
-        public string Error { get; set; }
-    }
+public class CaptureRequest
+{
+    [JsonPropertyName("fingerType")]
+    public string FingerType { get; set; } = string.Empty;
+    
+    [JsonPropertyName("qualityThreshold")]
+    public int QualityThreshold { get; set; } = 70;
+}
 
-    public class QualityAssessmentResponse
-    {
-        public bool Success { get; set; }
-        public int OverallScore { get; set; }
-        public int Clarity { get; set; }
-        public int Contrast { get; set; }
-        public int Coverage { get; set; }
-        public int RidgeDefinition { get; set; }
-        public bool IsAcceptable { get; set; }
-        public string Error { get; set; }
-    }
+public class BatchCaptureRequest
+{
+    [JsonPropertyName("fingers")]
+    public List<string> Fingers { get; set; } = new();
+    
+    [JsonPropertyName("qualityThreshold")]
+    public int QualityThreshold { get; set; } = 70;
+    
+    [JsonPropertyName("captureTimeout")]
+    public int CaptureTimeout { get; set; } = 60000;
+    
+    [JsonPropertyName("retryCount")]
+    public int RetryCount { get; set; } = 3;
+}
+
+public class FingerprintCaptureResponse
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+    
+    [JsonPropertyName("fingerType")]
+    public string FingerType { get; set; } = string.Empty;
+    
+    [JsonPropertyName("imageData")]
+    public string? ImageData { get; set; }
+    
+    [JsonPropertyName("wsqData")]
+    public string? WsqData { get; set; }
+    
+    [JsonPropertyName("qualityScore")]
+    public int QualityScore { get; set; }
+    
+    [JsonPropertyName("captureTime")]
+    public string CaptureTime { get; set; } = string.Empty;
+    
+    [JsonPropertyName("error")]
+    public string? Error { get; set; }
+}
+
+public class BatchCaptureResponse
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+    
+    [JsonPropertyName("capturedFingers")]
+    public List<FingerprintCaptureResponse> CapturedFingers { get; set; } = new();
+    
+    [JsonPropertyName("failedFingers")]
+    public List<string> FailedFingers { get; set; } = new();
+    
+    [JsonPropertyName("totalTime")]
+    public string TotalTime { get; set; } = string.Empty;
+    
+    [JsonPropertyName("error")]
+    public string? Error { get; set; }
+}
+
+public class DisconnectResponse
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+}
+
+public class QualityRequest
+{
+    [JsonPropertyName("imageData")]
+    public string ImageData { get; set; } = string.Empty;
+}
+
+// Additional classes needed by DeviceManager
+public class FingerprintCaptureResult
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+    
+    [JsonPropertyName("fingerType")]
+    public string FingerType { get; set; } = string.Empty;
+    
+    [JsonPropertyName("imageData")]
+    public string? ImageData { get; set; }
+    
+    [JsonPropertyName("wsqData")]
+    public string? WsqData { get; set; }
+    
+    [JsonPropertyName("qualityScore")]
+    public int QualityScore { get; set; }
+    
+    [JsonPropertyName("captureTime")]
+    public string CaptureTime { get; set; } = string.Empty;
+    
+    [JsonPropertyName("error")]
+    public string? Error { get; set; }
+}
+
+public class QualityAssessmentResult
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+    
+    [JsonPropertyName("overallScore")]
+    public int OverallScore { get; set; }
+    
+    [JsonPropertyName("clarity")]
+    public int Clarity { get; set; }
+    
+    [JsonPropertyName("contrast")]
+    public int Contrast { get; set; }
+    
+    [JsonPropertyName("coverage")]
+    public int Coverage { get; set; }
+    
+    [JsonPropertyName("ridgeDefinition")]
+    public int RidgeDefinition { get; set; }
+    
+    [JsonPropertyName("isAcceptable")]
+    public bool IsAcceptable { get; set; }
+    
+    [JsonPropertyName("error")]
+    public string? Error { get; set; }
 }

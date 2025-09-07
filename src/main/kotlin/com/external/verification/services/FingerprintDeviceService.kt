@@ -181,12 +181,19 @@ class FingerprintDeviceService {
                 val health = response.body<CSharpServiceHealth>()
                 logger.info { "C# Service is healthy: ${health.status}, SDK: ${health.sdkVersion}" }
                 deviceConnected.set(health.deviceConnected)
+                
+                if (health.deviceConnected) {
+                    logger.info { "Fingerprint device is connected and ready" }
+                } else {
+                    logger.info { "No fingerprint device connected - service will work in simulation mode" }
+                }
             } else {
                 logger.warn { "C# Service health check failed with status: ${response.status}" }
             }
         } catch (e: Exception) {
             logger.warn { "C# Service is not available: ${e.message}" }
             logger.info { "Please ensure the Digital Persona C# Windows Service is running on port 5001" }
+            logger.info { "Run 'start-real-fingerprint-integration.bat' as administrator to set up the service" }
         }
     }
     
@@ -363,6 +370,16 @@ class FingerprintDeviceService {
      */
     fun getMissingNativeLibraries(): List<String> {
         return listOf("Digital Persona .NET SDK", "C# Windows Service")
+    }
+    
+    /**
+     * Get native library guidance for missing dependencies
+     */
+    fun getNativeLibraryGuidance(): Map<String, String> {
+        return mapOf(
+            "Digital Persona .NET SDK" to "Install Digital Persona One Touch for Windows SDK from official source",
+            "C# Windows Service" to "Run 'start-real-fingerprint-integration.bat' as administrator to install the service"
+        )
     }
     
     /**
